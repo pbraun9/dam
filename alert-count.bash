@@ -13,13 +13,13 @@ aggs $count_field (desc)
 
 found $doc_count doc_count within last $delay_minutes minutes
 $saved_dashboard_url --> ${count_field%\.keyword}
+$saved_search_url
 
 EOF
 
 	# that is in regards to aggs size
-	# can be multi-words hence no one-liner
+	# multi-words multi-cols and multi-line
 	cat <<EOF
-keys:
 $keys
 
 (throttle for today $day)
@@ -86,12 +86,13 @@ doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
 (( doc_count < count_trigger )) && echo doc_count less than $count_trigger - all good && exit 0
 
 # get all encountered field contents (according to aggs size)
-keys=`echo "$result" | jq -r ".aggregations.count.buckets[].key"`
+keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostring) + \"\t\" + .key"`
 
 text=`prep_alert`
 
 touch $lock
 if (( dummy == 1 )); then
+	echo "$result" > /data/dam/result.debug.json && echo wrote to /data/dam/result.debug.json
 	echo the following would be sent to $webhook
 	echo "$text"
 else

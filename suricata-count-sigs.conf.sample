@@ -12,8 +12,11 @@ index=logs-suricata1
 
 count_field=alert.signature.keyword
 
-# query as saved search in elastic/opensearch Discovery
+# aggs as visualization elastic/opensearch Dashboards
 saved_dashboard_url=https://.../app/dashboards#/view/...
+
+# query as saved search in elastic/opensearch Discovery
+saved_search_url=https://.../goto/...
 
 # according to the cron job
 delay_minutes=15
