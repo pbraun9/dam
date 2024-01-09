@@ -1,4 +1,6 @@
 
+# requires suricata eve with flow enabled
+
 # first-line title for the alert
 title="new flow src port < 1024"
 
@@ -15,5 +17,5 @@ saved_search_url=https://.../goto/...
 delay_minutes=15
 
 # switch to 0 to send the webhooks
-dummy=0
+dummy=1
 

@@ -43,7 +43,7 @@ day=`date +%Y-%m-%d`
 lock=/data/dam/$alert.$day.lock
 
 # start logging
-echo `date` - $0 $alert_conf
+echo `date --rfc-email` - $0 $alert_conf
 
 [[ -f $lock ]] && echo there is a lock already for today \($day\) && exit 0
 

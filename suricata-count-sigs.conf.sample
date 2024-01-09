@@ -1,9 +1,11 @@
 
+# requires suricata eve
+
 # how many times does a single type of alert repeats
 count_trigger=200
 
 # first-line title for the alert
-title="same signature repeated $count_trigger times"
+title="same signature repeated $count_trigger+ times"
 
 # index/stream to search against
 index=logs-suricata1

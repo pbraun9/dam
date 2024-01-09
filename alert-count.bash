@@ -12,7 +12,7 @@ aggs $count_field (desc)
 \`\`\`
 
 found $doc_count doc_count within last $delay_minutes minutes
-$saved_dashboard_url --> alert.signature
+$saved_dashboard_url --> ${count_field%\.keyword}
 
 EOF
 
@@ -42,7 +42,7 @@ day=`date +%Y-%m-%d`
 lock=/data/dam/$alert.$day.lock
 
 # start logging
-echo `date` - $0 $alert_conf
+echo `date --rfc-email` - $0 $alert_conf
 
 [[ -f $lock ]] && echo there is a lock already for today \($day\) && exit 0
 
@@ -56,7 +56,7 @@ result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
                 {
                     "range": {
                         "@timestamp": {
-                            "from": "now-${delay_minutes}5m/m",
+                            "from": "now-${delay_minutes}m/m",
                             "to": "now/m"
                         }
                     }

@@ -3,8 +3,8 @@
 ## requirements
 
 - an elastic/opensearch cluster
-- some logs to be pushed over there (suricata eve with `flow` enabled as an alert sample)
-- specific fields to be available for alert verbosity (`sensor src.name dest.name` in our example)
+- some logs to be pushed over there (here suricata eve)
+- specific fields to be available for alert verbosity as for `alerts-hit.bash` (here `sensor src.name dest.name`)
 
 ## install
 
@@ -17,12 +17,16 @@
 
 	...
 
-setup an alert e.g.
+setup alerts e.g.
 
-	cp -pi suricata-src1024.conf.sample suricata-src1024.conf
+	cp -i suricata-src1024.conf.sample suricata-src1024.conf
+	cp -i suricata-count-sigs.conf.sample suricata-count-sigs.conf
 	vi suricata-src1024.conf
+	vi suricata-count-sigs.conf
 
 	...
+
+	chmod 600 *.conf
 
 ## test
 
