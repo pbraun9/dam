@@ -29,11 +29,12 @@ setup an alert e.g.
 	cd /data/dam/
 	ls -lF *.lock
 	./alert-hit.bash suricata-src1024.conf
+	./alert-count.bash suricata-count-sigs.conf
 
 ## enable
 
 ```
-*/15 * * * * /data/dam/alert-hit.bash suricata-src1024.conf >> /var/log/dam.log 2>&1
+*/15 * * * * /data/dam/alert-wrapper.bash >> /var/log/dam.log 2>&1
 ```
 
 ## resources

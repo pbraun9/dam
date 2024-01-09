@@ -7,21 +7,20 @@ $alert - $title
 
 \`\`\`
 $index
-Lucene> $query
+aggs $count_field (desc)
+.aggregations.sig.buckets.0.doc_count > $count_trigger
 \`\`\`
 
-found $hits hits within last $delay_minutes minutes
-$saved_search_url
+found $doc_count doc_count within last $delay_minutes minutes
+$saved_dashboard_url --> alert.signature
 
 EOF
 
-	# that is in regards to the first 100 hits
-	# output as one-liners
-	echo sensors: $sensors
-	echo source names: $src_names
-	echo destination names: $dest_names
-
+	# that is in regards to aggs size
+	# can be multi-words hence no one-liner
 	cat <<EOF
+keys:
+$keys
 
 (throttle for today $day)
 EOF
@@ -50,45 +49,44 @@ echo `date` - $0 $alert_conf
 result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
-    "size": 100,
+    "size": 0,
     "query": {
         "bool": {
             "filter": [
                 {
-                    "query_string": {
-                        "query": "$query"
-                    }
-                },
-                {
                     "range": {
                         "@timestamp": {
-                            "from": "now-${delay_minutes}m/m",
+                            "from": "now-${delay_minutes}5m/m",
                             "to": "now/m"
                         }
                     }
                 }
             ]
         }
+    },
+    "aggregations": {
+        "count": {
+            "terms": {
+                "field": "$count_field",
+                "size": 3,
+                "order": [
+                    {
+                        "_count": "desc"
+                    }
+                ]
+            }
+        }
     }
 }
 EOF`
 
-hits=`echo "$result" | jq -r ".hits.total.value"`
+# only get the most encountered field content (order desc): [0] instead of []
+doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
 
-(( hits < 1 )) && echo no hits \($hits\) - all good && exit 0
+(( doc_count < count_trigger )) && echo doc_count less than $count_trigger - all good && exit 0
 
-sensors=`echo "$result" | jq -r ".hits.hits[]._source.sensor" | sort -uV`
-
-# no idea yet why this returns null
-#src_names=`echo "$result" | jq -r ".hits.hits[]._source.src.name" | sort -uV`
-src_names=`echo "$result" | grep src.name | sort -uV | cut -f4 -d'"'`
-
-# no idea yet why this returns null
-#dest_names=`echo "$result" | jq -r ".hits.hits[]._source.dest.name" | sort -uV`
-dest_names=`echo "$result" | grep dest.name | sort -uV | cut -f4 -d'"'`
-
-# TODO show IPs when there is no src.name nor dest.name
-# (this would require to fix the null answer from jq)
+# get all encountered field contents (according to aggs size)
+keys=`echo "$result" | jq -r ".aggregations.count.buckets[].key"`
 
 text=`prep_alert`
 

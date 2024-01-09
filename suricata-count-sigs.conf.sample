@@ -1,19 +1,21 @@
 
+# how many times does a single type of alert repeats
+count_trigger=200
+
 # first-line title for the alert
-title="new flow src port < 1024"
+title="same signature repeated $count_trigger times"
 
 # index/stream to search against
 index=logs-suricata1
 
-# Lucene query
-query="event_type:flow AND flow.state:new AND src_port:<1024"
+count_field=alert.signature.keyword
 
 # query as saved search in elastic/opensearch Discovery
-saved_search_url=https://.../goto/...
+saved_dashboard_url=https://.../app/dashboards#/view/...
 
 # according to the cron job
 delay_minutes=15
 
 # switch to 0 to send the webhooks
-dummy=0
+dummy=1
 

@@ -5,8 +5,5 @@ user=HTTP_USER
 
 passwd=HTTP_PASSWD
 
-# switch to 0 to send the webhooks
-dummy=1
-
 webhook=https://hooks.slack.com/services/...
 
