@@ -1,0 +1,16 @@
+
+# first-line title for the alert
+title="src1024 - new flow src port < 1024"
+
+# index/stream to search against
+index=logs-suricata1
+
+# Lucene query
+query="event_type:flow AND flow.state:new AND src_port:<1024"
+
+# query as saved search in elastic/opensearch Discovery
+saved_search_url=https://.../goto/...
+
+# according to the cron job
+delay_minutes=15
+
