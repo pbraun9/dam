@@ -17,7 +17,7 @@
 
 	...
 
-setup alerts e.g.
+setup elastic/opensearch alerts e.g.
 
 	cp -i suricata-src1024.conf.sample suricata-src1024.conf
 	cp -i suricata-count-sigs.conf.sample suricata-count-sigs.conf
@@ -28,17 +28,34 @@ setup alerts e.g.
 
 	chmod 600 *.conf
 
-## test
+setup service alerts e.g.
+
+	cp -i check-svc.conf.sample check-svc.conf
+	vi check-svc.conf
+
+	...
+
+	chmod 600 *.conf
+
+## acceptance
 
 	cd /data/dam/
+
+elastic/opensearch alerts
+
 	ls -lF *.lock
 	./alert-hit.bash suricata-src1024.conf
 	./alert-count.bash suricata-count-sigs.conf
 
+service alerts
+
+	./check-svc.bash ssh-host service-name
+
 ## enable
 
 ```
-*/15 * * * * /data/dam/alert-wrapper.bash >> /var/log/dam.log 2>&1
+*/15 * * * * /data/dam/alert-wrapper.bash >> /var/log/dam-alert.log 2>&1
+ */5 * * * * /data/dam/check-svc-wrapper.bash >> /var/log/dam-svc.log 2>&1
 ```
 
 ## resources

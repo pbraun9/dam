@@ -42,10 +42,7 @@ source /data/dam/$alert_conf
 day=`date +%Y-%m-%d`
 lock=/data/dam/$alert.$day.lock
 
-# start logging
-echo `date --rfc-email` - $0 $alert_conf
-
-[[ -f $lock ]] && echo there is a lock already for today \($day\) && exit 0
+[[ -f $lock ]] && echo $alert_conf - there is a lock already for today \($day\) && exit 0
 
 result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
