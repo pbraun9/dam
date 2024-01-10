@@ -1,19 +1,21 @@
 
-# requires suricata eve
-
 # how many times does a single type of alert repeats
-count_trigger=200
+count_trigger=100
 
 # first-line title for the alert
-title="same signature repeated $count_trigger+ times"
+title="same ip reaches /path/to/check-token 100 times within 1 hour"
 
 # index/stream to search against
-index=logs-suricata1
+index=logs-dev-ingress-access1
 
-count_field=alert.signature.keyword
+# keep the double quotes escaped for injecting those into the json request
+query='request:\"POST /path/to/check-token\"'
+
+# aggs count terms field
+count_field=remote_addr.keyword
 
 # aggs as visualization elastic/opensearch Dashboards
-saved_dashboard_url=...
+saved_dashboard_url="no dashboard link"
 
 # query as saved search in elastic/opensearch Discovery
 saved_search_url=...

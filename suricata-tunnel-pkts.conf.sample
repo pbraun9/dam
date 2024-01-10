@@ -2,23 +2,20 @@
 # requires suricata eve with flow enabled
 
 # first-line title for the alert
-title="new flow src port < 1024"
+title="somebody generates intense load - packets in/out reached 1,000,000"
 
 # index/stream to search against
 index=logs-suricata1
 
 # Lucene query
-query="event_type:flow AND flow.state:new AND src_port:<1024"
+query="event_type:flow AND (flow.pkts_toclient>=1000000 OR flow.pkts_toserver>=1000000)"
 
 # query as saved search in elastic/opensearch Discovery
 saved_search_url=...
-
-# additional details for the alert to print (optional)
-#details=
 
 # according to the cron job
 delay_minutes=15
 
 # switch to 0 to send the webhooks
-dummy=1
+dummy=0
 

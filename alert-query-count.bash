@@ -51,6 +51,11 @@ result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
         "bool": {
             "filter": [
                 {
+                    "query_string": {
+                        "query": "$query",
+                    }
+                },
+                {
                     "range": {
                         "@timestamp": {
                             "from": "now-${delay_minutes}m/m",

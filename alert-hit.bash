@@ -12,8 +12,9 @@ Lucene> $query
 
 found $hits hits within last $delay_minutes minutes
 $saved_search_url
-
 EOF
+	[[ -n $details ]] && ( echo "$details"; echo )
+	echo
 
 	# that is in regards to the first 100 hits
 	# output as one-liners
@@ -72,7 +73,7 @@ EOF`
 
 hits=`echo "$result" | jq -r ".hits.total.value"`
 
-(( hits < 1 )) && echo no hits \($hits\) - all good && exit 0
+(( hits < 1 )) && echo $alert_conf - no hits \($hits\) - all good && exit 0
 
 sensors=`echo "$result" | jq -r ".hits.hits[]._source.sensor" | sort -uV`
 
@@ -95,7 +96,7 @@ if (( dummy == 1 )); then
 	echo "$text"
 else
 	echo -n sending webhook to slack ...
-	curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook
+	curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook
 	echo
 fi
 

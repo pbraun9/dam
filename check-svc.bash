@@ -11,7 +11,7 @@ source /data/dam/dam.conf
 function send_webhook {
 	echo "$text"
         echo -n sending webhook to slack ...
-        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $svc_webhook; echo
+        curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $svc_webhook; echo
         exit 1
 }
 
