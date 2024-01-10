@@ -13,7 +13,7 @@ Lucene> $query
 found $hits hits within last $delay_minutes minutes
 $saved_search_url
 EOF
-	[[ -n $details ]] && ( echo "$details"; echo )
+	[[ -n $details ]] && echo "$details"
 	echo
 
 	# that is in regards to the first 100 hits
@@ -41,9 +41,9 @@ source /data/dam/dam.conf
 source /data/dam/$alert_conf
 
 day=`date +%Y-%m-%d`
-lock=/data/dam/$alert.$day.lock
+lock=/var/lock/$alert.$day.lock
 
-[[ -f $lock ]] && echo $alert_conf - there is a lock already for today \($day\) && exit 0
+[[ -f $lock ]] && echo $alert_conf - there is a lock already for today \($lock\) && exit 0
 
 result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
@@ -78,25 +78,26 @@ hits=`echo "$result" | jq -r ".hits.total.value"`
 sensors=`echo "$result" | jq -r ".hits.hits[]._source.sensor" | sort -uV`
 
 # no idea yet why this returns null
-#src_names=`echo "$result" | jq -r ".hits.hits[]._source.src.name" | sort -uV`
-src_names=`echo "$result" | grep src.name | sort -uV | cut -f4 -d'"'`
+#src_names=`echo "$result" | jq -r ".hits.hits[]._source.source.geo.name" | sort -uV`
+src_names=`echo "$result" | grep source.geo.name | sort -uV | cut -f4 -d'"'`
 
 # no idea yet why this returns null
-#dest_names=`echo "$result" | jq -r ".hits.hits[]._source.dest.name" | sort -uV`
-dest_names=`echo "$result" | grep dest.name | sort -uV | cut -f4 -d'"'`
+#dest_names=`echo "$result" | jq -r ".hits.hits[]._source.destination.geo.name" | sort -uV`
+dest_names=`echo "$result" | grep destination.geo.name | sort -uV | cut -f4 -d'"'`
 
 # TODO show IPs when there is no src.name nor dest.name
 # (this would require to fix the null answer from jq)
 
 text=`prep_alert`
 
-touch $lock
 if (( dummy == 1 )); then
+        echo "$result" > /data/dam/result.debug.json && echo wrote to /data/dam/result.debug.json
 	echo the following would be sent to $webhook
 	echo "$text"
 else
 	echo -n sending webhook to slack ...
-	curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook
-	echo
+	curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
+	touch $lock
+	exit 1
 fi
 

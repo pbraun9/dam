@@ -39,9 +39,9 @@ source /data/dam/dam.conf
 source /data/dam/$alert_conf
 
 day=`date +%Y-%m-%d`
-lock=/data/dam/$alert.$day.lock
+lock=/var/lock/$alert.$day.lock
 
-[[ -f $lock ]] && echo $alert_conf - there is a lock already for today \($day\) && exit 0
+[[ -f $lock ]] && echo $alert_conf - there is a lock already for today \($lock\) && exit 0
 
 result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
@@ -92,14 +92,14 @@ keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostri
 
 text=`prep_alert`
 
-touch $lock
 if (( dummy == 1 )); then
 	echo "$result" > /data/dam/result.debug.json && echo wrote to /data/dam/result.debug.json
 	echo the following would be sent to $webhook
 	echo "$text"
 else
 	echo -n sending webhook to slack ...
-	curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook
-	echo
+	curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
+	touch $lock
+	exit 1
 fi
 

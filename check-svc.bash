@@ -12,8 +12,14 @@ function send_webhook {
 	echo "$text"
         echo -n sending webhook to slack ...
         curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $svc_webhook; echo
+	touch $lock
         exit 1
 }
+
+hour=`date +%Y-%m-%d-%H:00`
+lock=/var/lock/$host-$svc.$hour.lock
+
+[[ -f $lock ]] && echo $host-$svc - there is a lock already for this hour \($hour\) && exit 0
 
 # works against suricata
 pids=`ssh -n $host pidof $svc`
