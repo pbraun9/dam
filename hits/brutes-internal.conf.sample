@@ -7,7 +7,7 @@ title="somebody has issues connecting through SSH"
 # index/stream to search against
 index=logs-brutes1
 
-# Lucene query
+# Lucene or DQL query (depending on what script the wrapper calls)
 query="source.ip:INTERNAL-CIDR-HERE"
 
 # query as saved search in elastic/opensearch Discovery

@@ -47,7 +47,7 @@ lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
+result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
     "size": 100,
@@ -73,9 +73,17 @@ result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
 }
 EOF`
 
+(( $? > 0 )) && echo -e "$alert - error: request exited abormally:\n$result" && exit 1
+
+[[ -z $result ]] && echo $alert - error: result is empty && exit 1
+
+# keep last trace for parsing manually and enhancing the requests
+# no log rotation required, override every time
+echo "$result" > /data/dam/traces/result.$alert.json
+
 hits=`echo "$result" | jq -r ".hits.total.value"`
 
-(( hits < 1 )) && echo $alert_conf - no hits \($hits\) - all good && exit 0
+(( hits < 1 )) && echo $alert - no hits \($hits\) - all good && exit 0
 
 sensors=`echo "$result" | jq -r ".hits.hits[]._source.sensor" | sort -uV`
 
@@ -91,10 +99,6 @@ dest_names=`echo "$result" | grep destination.geo.name | sort -uV | cut -f4 -d'"
 # (this would require to fix the null answer from jq)
 
 text=`prep_alert`
-
-# keep last trace for parsing manually and enhancing the requests
-# no log rotation required, override every time
-echo "$result" > /data/dam/traces/result.$alert.json
 
 if (( dummy == 1 )); then
 	echo the following would be sent to $webhook

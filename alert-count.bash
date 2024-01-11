@@ -45,7 +45,7 @@ lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
+result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
     "size": 0,
@@ -79,19 +79,23 @@ result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
 }
 EOF`
 
+(( $? > 0 )) && echo -e "$alert - error: request exited abormally:\n$result" && exit 1
+
+[[ -z $result ]] && echo $alert - error: result is empty && exit 1
+
+# keep last trace for parsing manually and enhancing the requests
+# no log rotation required, override every time
+echo "$result" > /data/dam/traces/result.$alert.json
+
 # only get the most encountered field content (order desc): [0] instead of []
 doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
 
-(( doc_count < count_trigger )) && echo $alert_conf - doc_count less than $count_trigger - all good && exit 0
+(( doc_count < count_trigger )) && echo $alert - doc_count less than $count_trigger - all good && exit 0
 
 # get all encountered field contents (according to aggs size)
 keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostring) + \"\t\" + .key"`
 
 text=`prep_alert`
-
-# keep last trace for parsing manually and enhancing the requests
-# no log rotation required, override every time
-echo "$result" > /data/dam/traces/result.$alert.json
 
 if (( dummy == 1 )); then
 	echo the following would be sent to $webhook

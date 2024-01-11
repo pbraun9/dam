@@ -32,8 +32,8 @@ setup service alerts e.g.
 
 _assuming ssh client config is in place_
 
-	cp -i check-svc-wrapper.conf.sample check-svc-wrapper.conf
-	vi check-svc-wrapper.conf
+	cp -i wrapper-svc.conf.sample wrapper-svc.conf
+	vi wrapper-svc.conf
 
 	...
 
@@ -55,11 +55,15 @@ service alerts
 ## enable
 
 ```
-*/15 * * * * /data/dam/alert-wrapper.bash >> /var/log/dam-alert.log 2>&1
- */5 * * * * /data/dam/check-svc-wrapper.bash >> /var/log/dam-svc.log 2>&1
+*/15 * * * * /data/dam/wrapper-alerts.bash >> /var/log/dam-alerts.log 2>&1
+ */5 * * * * /data/dam/wrapper-svc.bash >> /var/log/dam-svc.log 2>&1
 ```
 
 ## resources
 
 https://elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-range-query.html
+
+https://api.slack.com/messaging/webhooks
+
+https://api.slack.com/apps/
 

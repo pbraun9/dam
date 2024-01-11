@@ -7,20 +7,22 @@ $alert - $title
 
 \`\`\`
 $index
-aggs $count_field (desc)
-.aggregations.sig.buckets.0.doc_count > $count_trigger
+DQL> $query
 \`\`\`
 
-found $doc_count doc_count within last $delay_minutes minutes
-$saved_dashboard_url --> ${count_field%\.keyword}
+found $hits hits within last $delay_minutes minutes
 $saved_search_url
-
 EOF
+	[[ -n $details ]] && echo "$details"
+	echo
 
-	# that is in regards to aggs size
-	# multi-words multi-cols and multi-line
+	# that is in regards to the first 100 hits
+	# output as one-liners
+	echo sensors: $sensors
+	echo source names: $src_names
+	echo destination names: $dest_names
+
 	cat <<EOF
-$keys
 
 (throttle for today $day)
 EOF
@@ -45,16 +47,27 @@ lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
 
+# with DQL we need a full json entry in place of the query
+# e.g. source.ip:x.x.x.x/x becomes "source.ip": "x.x.x.x/x"
+match_query=`echo $query | sed -r 's/^([^:]+):([^:]+)$/"\1": "\2"/'`
+
 result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
-    "size": 0,
+    "size": 100,
     "query": {
         "bool": {
             "filter": [
                 {
-                    "query_string": {
-                        "query": "$query"
+                    "bool": {
+                        "should": [
+                            {
+                                "match": {
+                                    $match_query
+                                }
+                            }
+                        ],
+                        "minimum_should_match": 1
                     }
                 },
                 {
@@ -66,19 +79,6 @@ result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST 
                     }
                 }
             ]
-        }
-    },
-    "aggregations": {
-        "count": {
-            "terms": {
-                "field": "$count_field",
-                "size": 3,
-                "order": [
-                    {
-                        "_count": "desc"
-                    }
-                ]
-            }
         }
     }
 }
@@ -92,13 +92,22 @@ EOF`
 # no log rotation required, override every time
 echo "$result" > /data/dam/traces/result.$alert.json
 
-# only get the most encountered field content (order desc): [0] instead of []
-doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
+hits=`echo "$result" | jq -r ".hits.total.value"`
 
-(( doc_count < count_trigger )) && echo $alert - doc_count less than $count_trigger - all good && exit 0
+(( hits < 1 )) && echo $alert - no hits \($hits\) - all good && exit 0
 
-# get all encountered field contents (according to aggs size)
-keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostring) + \"\t\" + .key"`
+sensors=`echo "$result" | jq -r ".hits.hits[]._source.sensor" | sort -uV`
+
+# no idea yet why this returns null
+#src_names=`echo "$result" | jq -r ".hits.hits[]._source.source.geo.name" | sort -uV`
+src_names=`echo "$result" | grep source.geo.name | sort -uV | cut -f4 -d'"'`
+
+# no idea yet why this returns null
+#dest_names=`echo "$result" | jq -r ".hits.hits[]._source.destination.geo.name" | sort -uV`
+dest_names=`echo "$result" | grep destination.geo.name | sort -uV | cut -f4 -d'"'`
+
+# TODO show IPs when there is no src.name nor dest.name
+# (this would require to fix the null answer from jq)
 
 text=`prep_alert`
 
