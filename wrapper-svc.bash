@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo `date --rfc-email` - ${0##*/}
-grep -vE '^#|^$' /data/dam/check-svc-wrapper.conf | while read line; do
+grep -vE '^#|^$' /data/dam/wrapper-svc.conf | while read line; do
 	host=`echo $line | awk '{print $1}'`
 	svc=`echo $line | awk '{print $2}'`
 	many=`echo $line | awk '{print $3}'`

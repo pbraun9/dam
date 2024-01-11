@@ -106,7 +106,7 @@ if (( dummy == 1 )); then
 	echo the following would be sent to $webhook
 	echo "$text"
 else
-	echo -n sending webhook to slack ...
+	echo -n $alert - sending webhook to slack ...
 	curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
 	touch $lock
 	exit 1

@@ -7,20 +7,14 @@ $alert - $title
 
 \`\`\`
 $index
-aggs $count_field (desc)
-.aggregations.sig.buckets.0.doc_count > $count_trigger
 \`\`\`
 
-found $doc_count doc_count within last $delay_minutes minutes
-$saved_dashboard_url --> ${count_field%\.keyword}
 $saved_search_url
-
 EOF
+	[[ -n $details ]] && echo "$details"
+	echo
 
-	# that is in regards to aggs size
-	# multi-words multi-cols and multi-line
 	cat <<EOF
-$keys
 
 (throttle for today $day)
 EOF
@@ -48,7 +42,7 @@ lock=/var/lock/$alert.$day.lock
 result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
-    "size": 0,
+    "size": 1,
     "query": {
         "bool": {
             "filter": [
@@ -62,19 +56,6 @@ result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST 
                 }
             ]
         }
-    },
-    "aggregations": {
-        "count": {
-            "terms": {
-                "field": "$count_field",
-                "size": 3,
-                "order": [
-                    {
-                        "_count": "desc"
-                    }
-                ]
-            }
-        }
     }
 }
 EOF`
@@ -87,13 +68,10 @@ EOF`
 # no log rotation required, override every time
 echo "$result" > /data/dam/traces/result.$alert.json
 
-# only get the most encountered field content (order desc): [0] instead of []
-doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
+hits=`echo "$result" | jq -r ".hits.total.value"`
 
-(( doc_count < count_trigger )) && echo $alert - doc_count less than $count_trigger - all good && exit 0
-
-# get all encountered field contents (according to aggs size)
-keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostring) + \"\t\" + .key"`
+# search query above returns max 1 hit anyway
+(( hits > 1 )) && echo $alert - index/stream is alive \($hits hits\) - all good && exit 0
 
 text=`prep_alert`
 
