@@ -1,6 +1,8 @@
 
-HOSTNAME SERVICE
-HOSTNAME SERVICE2
+HOSTNAME sshguard
+HOSTNAME suricata
+HOSTNAME fluent-bit
 
-HOSTNAME2 SERVICE
+# e.g. expecting 3 pids
+HOSTNAME2 websocat 3
 

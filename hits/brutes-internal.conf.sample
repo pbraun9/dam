@@ -2,20 +2,23 @@
 # requires suricata eve with flow enabled
 
 # first-line title for the alert
-title="somebody generates intense load - packets in/out reached 1,000,000"
+title="somebody has issues connecting through SSH"
 
 # index/stream to search against
-index=logs-suricata1
+index=logs-brutes1
 
 # Lucene query
-query="event_type:flow AND (flow.pkts_toclient>=1000000 OR flow.pkts_toserver>=1000000)"
+query="source.ip:INTERNAL-CIDR-HERE"
 
 # query as saved search in elastic/opensearch Discovery
 saved_search_url=...
+
+# additional details for the alert to print (optional)
+details="(brute force attacks are only fine if addresses are public -> public)"
 
 # according to the cron job
 delay_minutes=15
 
 # switch to 0 to send the webhooks
-dummy=0
+dummy=1
 

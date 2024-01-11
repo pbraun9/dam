@@ -6,7 +6,7 @@ grep -vE '^#|^$' /data/dam/check-svc-wrapper.conf | while read line; do
 	svc=`echo $line | awk '{print $2}'`
 	many=`echo $line | awk '{print $3}'`
 
-	echo -n checking service $many $svc on ssh-host $host ...
+	echo -n checking service $many $svc on $host ...
 	/data/dam/check-svc.bash $host $svc $many && echo OK || echo NOK
 
 	unset host svc

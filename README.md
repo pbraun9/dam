@@ -3,8 +3,8 @@
 ## requirements
 
 - an elastic/opensearch cluster
-- some logs to be pushed over there (here suricata eve)
-- specific fields to be available for alert verbosity as for `alerts-hit.bash` (here `sensor src.name dest.name`)
+- some logs to be pushed over there
+- specific fields to be available for alert verbosity e.g. `sensor`, `source.geo.name` and `destination.geo.name`
 
 ## install
 
@@ -17,21 +17,23 @@
 
 	...
 
+	chmod 600 *.conf
+
 setup elastic/opensearch alerts e.g.
 
-	cp -i suricata-src1024.conf.sample suricata-src1024.conf
-	cp -i suricata-count-sigs.conf.sample suricata-count-sigs.conf
-	vi suricata-src1024.conf
-	vi suricata-count-sigs.conf
+	cp -i hits/suricata-src1024.conf.sample hits/suricata-src1024.conf
+	vi hits/suricata-src1024.conf
 
 	...
 
-	chmod 600 *.conf
+	chmod 600 hits/*.conf
 
 setup service alerts e.g.
 
-	cp -i check-svc.conf.sample check-svc.conf
-	vi check-svc.conf
+_assuming ssh client config is in place_
+
+	cp -i check-svc-wrapper.conf.sample check-svc-wrapper.conf
+	vi check-svc-wrapper.conf
 
 	...
 
@@ -43,13 +45,12 @@ setup service alerts e.g.
 
 elastic/opensearch alerts
 
-	ls -lF *.lock
-	./alert-hit.bash suricata-src1024.conf
-	./alert-count.bash suricata-count-sigs.conf
+	ls -lF /var/lock/*.lock
+	./alert-hit.bash hits/suricata-src1024.conf
 
 service alerts
 
-	./check-svc.bash ssh-host service-name
+	./check-svc.bash host service-name
 
 ## enable
 

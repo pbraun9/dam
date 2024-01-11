@@ -9,3 +9,6 @@ webhook=https://hooks.slack.com/services/...
 
 svc_webhook=https://hooks.slack.com/services/...
 
+# quick helper to disable all alerts at once - overrides alert.conf dummy variable
+dummy=1
+

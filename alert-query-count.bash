@@ -31,17 +31,19 @@ EOF
 [[ -z $1 ]] && echo what alert.conf? && exit 1
 alert_conf=$1
 alert=${alert_conf%\.conf}
-
-[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
-source /data/dam/dam.conf
+alert=${alert#*/}
 
 [[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
 source /data/dam/$alert_conf
 
+# global dummy overrides conf-specific variable
+[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
+source /data/dam/dam.conf
+
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock
 
-[[ -f $lock ]] && echo $alert_conf - there is a lock already for today \($lock\) && exit 0
+[[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
 
 result=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
@@ -92,8 +94,11 @@ keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostri
 
 text=`prep_alert`
 
+# keep last trace for parsing manually and enhancing the requests
+# no log rotation required, override every time
+echo "$result" > /data/dam/traces/result.$alert.json
+
 if (( dummy == 1 )); then
-	echo "$result" > /data/dam/result.debug.json && echo wrote to /data/dam/result.debug.json
 	echo the following would be sent to $webhook
 	echo "$text"
 else

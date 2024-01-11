@@ -1,0 +1,22 @@
+
+# first-line title for the alert
+title="likely an SQLi or XSS or RCE attack"
+
+# index/stream to search against
+index=logs-cloudflare1
+
+# Lucene query
+query="WAFAttackScore<51 OR WAFRCEAttackScore<51 OR WAFSQLiAttackScore<51 OR WAFXSSAttackScore<51"
+
+# query as saved search in elastic/opensearch Discovery
+saved_search_url=...
+
+# additional details for the alert to print (optional)
+details="(https://developers.cloudflare.com/waf/about/waf-attack-score/)"
+
+# according to the cron job
+delay_minutes=15
+
+# switch to 0 to send the webhooks
+dummy=1
+

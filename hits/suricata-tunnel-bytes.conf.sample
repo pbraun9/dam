@@ -1,0 +1,21 @@
+
+# requires suricata eve with flow enabled
+
+# first-line title for the alert
+title="somebody generates bandwidth - bytes in/out reached 5 MBit in a single flow"
+
+# index/stream to search against
+index=logs-suricata1
+
+# Lucene query
+query="event_type:flow AND (flow.bytes_toclient>=5000000 OR flow.bytes_toserver>=5000000)"
+
+# query as saved search in elastic/opensearch Discovery
+saved_search_url=...
+
+# according to the cron job
+delay_minutes=15
+
+# switch to 0 to send the webhooks
+dummy=1
+

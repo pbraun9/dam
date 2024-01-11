@@ -1,0 +1,22 @@
+
+# first-line title for the alert
+title="custom mmdb does not know about this peer IP"
+
+# index/stream to search against
+index=logs-peers1
+
+# Lucene query
+query="!source.geo.name:*"
+
+# query as saved search in elastic/opensearch Discovery
+saved_search_url=...
+
+# additional details for the alert to print (optional)
+details="maybe a new user - eventually rebuild custom mmdb"
+
+# according to the cron job
+delay_minutes=15
+
+# switch to 0 to send the webhooks
+dummy=1
+
