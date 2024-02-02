@@ -2,8 +2,11 @@
 # how many times does a single type of alert repeats
 count_trigger=100
 
+# according to the cron job
+delay_minutes=15
+
 # first-line title for the alert
-title="same ip reaches /path/to/check-token 100 times within 15 minutes"
+title="same ip reaches /path/to/check-token 100 times within $delay_minutes minutes"
 
 # index/stream to search against
 index=logs-dev-ingress-access1
@@ -19,9 +22,6 @@ saved_dashboard_url="no dashboard link"
 
 # query as saved search in elastic/opensearch Discovery
 saved_search_url=...
-
-# according to the cron job
-delay_minutes=15
 
 # switch to 0 to send the webhooks
 dummy=1

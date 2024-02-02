@@ -33,7 +33,11 @@ function send_webhook {
 hour=`date +%Y-%m-%d-%H:00`
 lock=/var/lock/$host-$svc.$hour.lock
 
-[[ -f $lock ]] && echo $host-$svc - there is a lock already for this hour \($hour\) && exit 0
+if [[ -f $lock ]]; then
+	echo $host-$svc - there is a lock already for this hour \($hour\)
+	# parent wrapper will print NOK
+	exit 1
+fi
 
 check_pid
 

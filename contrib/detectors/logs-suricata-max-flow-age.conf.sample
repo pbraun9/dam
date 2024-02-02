@@ -1,0 +1,16 @@
+
+detector=logs-suricata-min-flow-age
+
+descr="spot short-standing connections"
+
+index="logs-suricata*"
+
+aggs=min
+
+field=flow.age
+
+# custom result index suffix (after opensearch-ad-plugin-result-)
+suffix=suricata
+
+dummy=0
+

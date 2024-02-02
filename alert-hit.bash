@@ -35,12 +35,11 @@ alert_conf=$1
 alert=${alert_conf%\.conf}
 alert=${alert#*/}
 
-[[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
-source /data/dam/$alert_conf
-
-# global dummy overrides conf-specific variable
 [[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
 source /data/dam/dam.conf
+
+[[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
+source /data/dam/$alert_conf
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock
@@ -83,7 +82,7 @@ echo "$result" > /data/dam/traces/result.$alert.json
 
 hits=`echo "$result" | jq -r ".hits.total.value"`
 
-(( hits < 1 )) && echo $alert - no hits \($hits\) - all good && exit 0
+(( hits < 1 )) && echo $alert - no hits - all good && exit 0
 
 sensors=`echo "$result" | jq -r ".hits.hits[]._source.sensor" | sort -uV`
 

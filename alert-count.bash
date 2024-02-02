@@ -33,12 +33,11 @@ alert_conf=$1
 alert=${alert_conf%\.conf}
 alert=${alert#*/}
 
-[[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
-source /data/dam/$alert_conf
-
-# global dummy overrides conf-specific variable
 [[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
 source /data/dam/dam.conf
+
+[[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
+source /data/dam/$alert_conf
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock

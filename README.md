@@ -19,45 +19,13 @@
 
 	chmod 600 *.conf
 
-setup elastic/opensearch alerts e.g.
+## setup
 
-	cp -i hits/suricata-src1024.conf.sample hits/suricata-src1024.conf
-	vi hits/suricata-src1024.conf
+[elastic/opensearch alerts](README.alerts)
 
-	...
+[service checks](README.services)
 
-	chmod 600 hits/*.conf
-
-setup service alerts e.g.
-
-_assuming ssh client config is in place_
-
-	cp -i wrapper-svc.conf.sample wrapper-svc.conf
-	vi wrapper-svc.conf
-
-	...
-
-	chmod 600 *.conf
-
-## acceptance
-
-	cd /data/dam/
-
-elastic/opensearch alerts
-
-	ls -lF /var/lock/*.lock
-	./alert-hit.bash hits/suricata-src1024.conf
-
-service alerts
-
-	./check-svc.bash host service-name
-
-## enable
-
-```
-*/15 * * * * /data/dam/wrapper-alerts.bash >> /var/log/dam-alerts.log 2>&1
- */5 * * * * /data/dam/wrapper-svc.bash >> /var/log/dam-svc.log 2>&1
-```
+[anomaly detection](README.detectors)
 
 ## resources
 
@@ -66,4 +34,11 @@ https://elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-range-query.h
 https://api.slack.com/messaging/webhooks
 
 https://api.slack.com/apps/
+
+### anomaly detection
+
+https://opensearch.org/docs/latest/observing-your-data/ad/api/
+
+https://opensearch.org/docs/2.11/observing-your-data/ad/index/
+==> about detection_interval and window_delay
 
