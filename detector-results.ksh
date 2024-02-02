@@ -61,22 +61,12 @@ EOF
 }
 
 function prep_alert {
-	details=`/data/dam/contrib/detector-get.bash $detector $id`
-
-	descr=`echo $details | jq -r '.anomaly_detector.description'`
-	index=`echo $details | jq -r '.anomaly_detector.indices[]'`
-	aggs_query=`echo $details | jq '.anomaly_detector.feature_attributes[].aggregation_query.aggs0'`
-
 	cat <<EOF
-$feature_name ($descr) - \`$index\`
+$feature_name ($descr on $index)
 anomaly detected (grade $anomaly_grade) at $human_time
-expected value was $expected while feature value was $feature
-
-\`\`\`
-$aggs_query
-\`\`\`
+expected value was $expected but feature value was $feature
+(aggs $aggs field $field)
 EOF
-	unset details descr index
 }
 
 [[ -z $3 ]] && echo -e \\n usage: ${0##*/} detector-name detector-id custom_index \\n && exit 1
@@ -139,7 +129,15 @@ if (( debug > 0 )); then
 	echo human_time - $human_time
 fi
 
-text=`prep_alert`
+details=`/data/dam/contrib/detector-get.bash $detector $id`
+
+descr=`echo $details | jq -r '.anomaly_detector.description'`
+index=`echo $details | jq -r '.anomaly_detector.indices[]'`
+aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
+field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
+
+text="`prep_alert`"
+unset details descr index
 
 if (( dummy == 1 )); then
         echo the following would be sent to $webhook
