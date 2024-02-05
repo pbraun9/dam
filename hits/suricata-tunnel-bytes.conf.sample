@@ -13,6 +13,9 @@ query="event_type:flow AND (flow.bytes_toclient>=5000000 OR flow.bytes_toserver>
 # query as saved search in elastic/opensearch Discovery
 saved_search_url=...
 
+# fields to be parsed for the alert
+show_fields="sensor source.geo.name destination.geo.name"
+
 # according to the cron job
 delay_minutes=15
 

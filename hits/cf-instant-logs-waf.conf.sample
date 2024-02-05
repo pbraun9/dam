@@ -5,14 +5,19 @@ title="likely an SQLi or XSS or RCE attack"
 # index/stream to search against
 index=logs-cloudflare1
 
-# Lucene query
-query="WAFAttackScore<51 OR WAFRCEAttackScore<51 OR WAFSQLiAttackScore<51 OR WAFXSSAttackScore<51"
+# Lucene
+query="WAFAttackScore:<51"
+# DQL
+#query="WAFAttackScore<51 or WAFRCEAttackScore<51 or WAFSQLiAttackScore<51 or WAFXSSAttackScore<51"
 
 # query as saved search in elastic/opensearch Discovery
 saved_search_url=...
 
 # additional details for the alert to print (optional)
 details="(https://developers.cloudflare.com/waf/about/waf-attack-score/)"
+
+# fields to be parsed for the alert
+show_fields="sensor source.geo.name destination.geo.name"
 
 # according to the cron job
 delay_minutes=15

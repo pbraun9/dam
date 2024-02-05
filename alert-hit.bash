@@ -3,27 +3,29 @@
 function prep_alert {
         # beware of escapes for "`"
         cat <<EOF
-$alert - $title
+$alert - $title - found $hits hits within last $delay_minutes minutes
 
 \`\`\`
 $index
 Lucene> $query
+EOF
+
+	# that is in regards to the first 100 hits
+	for show_field in $show_fields; do
+		echo $show_field
+		echo "$result" | jq -r ".hits.hits[]._source.$show_field" | sort -uV | sed 's/^/\t/'
+	done; unset show_field
+
+	# TODO show IPs when there is no src.name nor dest.name
+	# (this would require to fix the null answer from jq)
+
+	cat <<EOF
 \`\`\`
 
-found $hits hits within last $delay_minutes minutes
 $saved_search_url
 EOF
 	[[ -n $details ]] && echo "$details"
-	echo
-
-	# that is in regards to the first 100 hits
-	# output as one-liners
-	echo sensors: $sensors
-	echo source names: $src_names
-	echo destination names: $dest_names
-
 	cat <<EOF
-
 (throttle for today $day)
 EOF
 }
@@ -83,19 +85,6 @@ echo "$result" > /data/dam/traces/result.$alert.json
 hits=`echo "$result" | jq -r ".hits.total.value"`
 
 (( hits < 1 )) && echo $alert - no hits - all good && exit 0
-
-sensors=`echo "$result" | jq -r ".hits.hits[]._source.sensor" | sort -uV`
-
-# no idea yet why this returns null
-#src_names=`echo "$result" | jq -r ".hits.hits[]._source.source.geo.name" | sort -uV`
-src_names=`echo "$result" | grep source.geo.name | sort -uV | cut -f4 -d'"'`
-
-# no idea yet why this returns null
-#dest_names=`echo "$result" | jq -r ".hits.hits[]._source.destination.geo.name" | sort -uV`
-dest_names=`echo "$result" | grep destination.geo.name | sort -uV | cut -f4 -d'"'`
-
-# TODO show IPs when there is no src.name nor dest.name
-# (this would require to fix the null answer from jq)
 
 text=`prep_alert`
 

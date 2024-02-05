@@ -16,6 +16,9 @@ saved_search_url=...
 # additional details for the alert to print (optional)
 details="(brute force attacks are only fine if addresses are public -> public)"
 
+# fields to be parsed for the alert
+show_fields="sensor source.geo.name destination.geo.name"
+
 # according to the cron job
 delay_minutes=15
 

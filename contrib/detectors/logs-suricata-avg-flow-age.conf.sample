@@ -12,5 +12,3 @@ field=flow.age
 # custom result index suffix (after opensearch-ad-plugin-result-)
 suffix=suricata
 
-dummy=0
-
