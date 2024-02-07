@@ -21,6 +21,8 @@ webhook=https://hooks.slack.com/services/...
 # vmetrics
 #
 
+#vmetrics_webhook=https://hooks.slack.com/services/...
+
 # standalone vs. cluster
 #vmetrics_endpoint=http://localhost:8428/api/v1/query
 #vmetrics_endpoint=https://vmselect.internal/select/0/prometheus/api/v1/query

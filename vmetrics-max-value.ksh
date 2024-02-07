@@ -24,6 +24,8 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 	tee /data/dam/traces/$confshort.json | \
 	jq -r '.data.result[] | .metric.sensor + "," + .value[1]' | \
 	while read line; do
+		typeset -F 2 value
+
 		sensor=`echo $line | cut -f1 -d,`
 		value=`echo $line | cut -f2 -d,`
 
@@ -38,7 +40,7 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		fi
 
 		text="$text
-(throttle for today)"
+(throttle for today $day)"
 
 		if (( dummy == 1 )); then
 			echo the following would be sent to vmetrics_webhook $vmetrics_webhook
