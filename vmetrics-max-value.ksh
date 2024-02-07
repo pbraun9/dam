@@ -10,13 +10,15 @@ confshort=${confshort%\.conf}
 
 source /data/dam/dam.conf
 
-[[ -z $vmetrics_webhook ]] && echo \$vmetrics_webhook not defined && exit 1
-[[ -z $vmetrics_endpoint ]] && echo \$vmetrics_endpoint not defined && exit 1
+[[ -z $vmetrics_webhook ]] && echo ERROR \$vmetrics_webhook not defined && exit 1
+[[ -z $vmetrics_endpoint ]] && echo ERROR \$vmetrics_endpoint not defined && exit 1
+[[ -z $vmetrics_url ]] && echo ERROR \$vmetrics_url not defined && exit 1
 
 source $conf
 
-[[ -z $query ]] && echo \$query not defined && exit 1
-[[ -z $max_value ]] && echo \$max_value not defined && exit 1
+[[ -z $query ]] && echo ERROR \$query not defined && exit 1
+[[ -z $max_value ]] && echo ERROR \$max_value not defined && exit 1
+[[ -z $url_suffix ]] && echo ERROR \$url_suffix not defined && exit 1
 
 day=`date +%Y-%m-%d`
 
@@ -40,6 +42,7 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		fi
 
 		text="$text
+${vmetrics_url}${url_suffix}
 (throttle for today $day)"
 
 		if (( dummy == 1 )); then
