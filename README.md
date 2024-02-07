@@ -27,6 +27,8 @@
 
 [anomaly detection](README.detectors)
 
+[vmetrics](README.vmetrics)
+
 ## resources
 
 https://elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-range-query.html

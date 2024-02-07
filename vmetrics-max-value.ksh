@@ -26,11 +26,14 @@ curl -s "http://localhost:8428/api/v1/query?query=$query" | \
 		value=`echo $line | cut -f2 -d,`
 
 		lock=/var/lock/$confshort.$day.$sensor.lock
-		[[ -f $lock ]] && echo $confshort $sensor - there is a lock already for today \($lock\) && exit 0
+		[[ -f $lock ]] && echo $confshort $sensor - there is a lock already for today \($lock\) && continue
 
 		(( value > max_value )) && text="$confshort ALARM - sensor $sensor value $value is above $max_value"
 
 		[[ -z $text ]] && continue
+
+		text="$text
+(throttle for today)"
 
 		if (( dummy == 1 )); then
 			echo the following would be sent to vmetrics_webhook $vmetrics_webhook

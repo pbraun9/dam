@@ -1,0 +1,20 @@
+# dam - vmetrics
+
+## setup
+
+	cd vmetrics-gauge/
+	cp -pi ... ...
+	vi ...
+	cd ../
+
+	cp -pi wrapper-vmetrics.bash.sample wrapper-vmetrics.bash
+	vi wrapper-vmetrics.bash
+
+## enable
+
+```
+crontab -e
+
+* * * * * /data/dam/wrapper-vmetrics.bash > /var/log/dam-vmetrics.log 2>&1
+```
+

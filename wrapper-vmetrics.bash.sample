@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cd /data/dam/
+
+./vmetrics-max-value.ksh vmetrics-conftype/config.conf
+
