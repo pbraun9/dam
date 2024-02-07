@@ -11,6 +11,7 @@ confshort=${confshort%\.conf}
 source /data/dam/dam.conf
 
 [[ -z $vmetrics_webhook ]] && echo \$vmetrics_webhook not defined && exit 1
+[[ -z $vmetrics_endpoint ]] && echo \$vmetrics_endpoint not defined && exit 1
 
 source $conf
 
@@ -19,7 +20,8 @@ source $conf
 
 day=`date +%Y-%m-%d`
 
-curl -s "http://localhost:8428/api/v1/query?query=$query" | \
+curl -s "$vmetrics_endpoint" -d "query=$query" | \
+	tee /data/dam/traces/$confshort.json | \
 	jq -r '.data.result[] | .metric.sensor + "," + .value[1]' | \
 	while read line; do
 		sensor=`echo $line | cut -f1 -d,`
@@ -28,9 +30,12 @@ curl -s "http://localhost:8428/api/v1/query?query=$query" | \
 		lock=/var/lock/$confshort.$day.$sensor.lock
 		[[ -f $lock ]] && echo $confshort $sensor - there is a lock already for today \($lock\) && continue
 
-		(( value > max_value )) && text="$confshort ALARM - sensor $sensor value $value is above $max_value"
-
-		[[ -z $text ]] && continue
+		if (( value > max_value )); then
+			text="$confshort ALARM - sensor $sensor value $value is above $max_value"
+		else
+			echo $confshort $sensor - value $value is fine, nothing to report
+			continue
+		fi
 
 		text="$text
 (throttle for today)"

@@ -1,4 +1,8 @@
 
+#
+# elk/osearch alerts
+#
+
 endpoint=https://ELASTIC-OR-OPENSEARCH-HOST:9200
 
 user=HTTP_USER
@@ -7,5 +11,17 @@ passwd=HTTP_PASSWD
 
 webhook=https://hooks.slack.com/services/...
 
-svc_webhook=https://hooks.slack.com/services/...
+#
+# service checks
+#
+
+#svc_webhook=https://hooks.slack.com/services/...
+
+#
+# vmetrics
+#
+
+# standalone vs. cluster
+#vmetrics_endpoint=http://localhost:8428/api/v1/query
+#vmetrics_endpoint=https://vmselect.internal/select/0/prometheus/api/v1/query
 

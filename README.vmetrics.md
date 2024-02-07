@@ -15,6 +15,6 @@
 ```
 crontab -e
 
-* * * * * /data/dam/wrapper-vmetrics.bash > /var/log/dam-vmetrics.log 2>&1
+   * * * * * /data/dam/wrapper-vmetrics.bash > /var/log/dam-vmetrics.log 2>&1
 ```
 
