@@ -2,6 +2,10 @@
 
 ## requirements
 
+we need `ssh-ping` command to be available
+
+	apt install ssh-tools
+
 alerts system
 
 	ssh-keygen -t ed25519

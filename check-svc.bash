@@ -34,15 +34,27 @@ hour=`date +%Y-%m-%d-%H:00`
 lock=/var/lock/$host-$svc.$hour.lock
 
 if [[ -f $lock ]]; then
-	echo $host-$svc - there is a lock already for this hour \($hour\)
+	echo $host-$svc - there is a lock already for this hour \($lock\)
 	# parent wrapper will print NOK
 	exit 1
 fi
 
+ssh-ping -W1 -c3 -i0.2 $host >/dev/null && echo host_alive=1 || host_alive=0
+
+#
+# first alert exists from here
+#
+
+(( host_alive == 0 )) && send_webhook "cannot check service $svc on $host (ssh service not reachable)"
+
+#
+# proceed with the PID check
+#
+
 check_pid
 
 #
-# alert function exists from here
+# second alert exists from here
 #
 
 [[ -z $pids ]] && send_webhook "service $svc is not running on $host (pid not found)"
