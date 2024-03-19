@@ -23,7 +23,7 @@
 
 [elastic/opensearch alerts](README.alerts)
 
-[service checks](README.services)
+[service checks](README.svc)
 
 [anomaly detection](README.detectors)
 
