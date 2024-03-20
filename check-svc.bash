@@ -1,6 +1,13 @@
 #!/bin/bash
 
-# remains silent if everything is good
+#
+# this script remains silent as long as there's nothing to report
+#
+# warning / lessons learned: to avoid the "shallowing" issue,
+# namely the ssh and ssh-ping commands to eat away the parent script while loop
+# (this script is called by wrapper-svc.bash), we had to squeeze stdin.
+# ssh -n
+# ssh-ping </dev/null
 
 [[ -z $2 ]] && echo "usage: ${0##*/} host service [expected-pids]" && exit 1
 host=$1
@@ -22,24 +29,28 @@ function send_webhook {
 	text=$@
 
 	echo "$text"
+
         echo -n sending webhook to slack ...
         curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $svc_webhook; echo
-	touch $lock
+
+	echo -n enabling 1 hour lock \($lock\) ...
+	touch $lock && echo done
+
         exit 1
 }
 
 [[ ! -x `which wc` ]] && echo cannot find wc executable && exit 1
+[[ ! -x `which ssh-ping` ]] && echo cannot find ssh-ping executable && exit 1
 
 hour=`date +%Y-%m-%d-%H:00`
 lock=/var/lock/$host-$svc.$hour.lock
 
 if [[ -f $lock ]]; then
 	echo $host-$svc - there is a lock already for this hour \($lock\)
-	# parent wrapper will print NOK
 	exit 1
 fi
 
-ssh-ping -W1 -c3 -i0.2 $host >/dev/null && echo host_alive=1 || host_alive=0
+ssh-ping -W1 -c1 $host </dev/null >/dev/null && host_alive=1 || host_alive=0
 
 #
 # first alert exists from here
