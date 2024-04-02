@@ -25,6 +25,9 @@ service alerts
 ## enable
 
 ```
+crontab -e
+
+# Query Alerts
 */15 * * * * /data/dam/wrapper-alerts.bash >> /var/log/dam-alerts.log 2>&1
 ```
 

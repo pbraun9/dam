@@ -43,6 +43,9 @@ _assuming ssh client config is in place_
 ## enable
 
 ```
+crontab -e
+
+# Service Alerts
  */5 * * * * /data/dam/wrapper-svc.bash >> /var/log/dam-svc.log 2>&1
 ```
 

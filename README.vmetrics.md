@@ -15,10 +15,13 @@
 ```
 crontab -e
 
+# Performance Monitoring
    * * * * * /data/dam/wrapper-vmetrics.bash >> /var/log/dam-vmetrics.log 2>&1
 ```
 
 ## resources
 
 https://github.com/VictoriaMetrics/VictoriaMetrics/wiki/url-examples
+
+https://docs.victoriametrics.com/metricsql/
 

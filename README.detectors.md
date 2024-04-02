@@ -1,22 +1,28 @@
 # setting up anomaly detectors
 
-### setup
+## descr
 
-the hard part was to create the detectors [through the api](contrib/README) -- you can now simply proceed with the wrapper.
+the hard part was to create the detectors [through the api](prep-detectors/README)
 
 	contrib/detector-list.bash
-	./wrapper-detectors.bash
 
 ### acceptance
+
+you can now simply proceed with the wrapper
 
 	vi detector-results.bash
 
 	# override to 1H for testing
 	delay_minutes=60
 
+	./wrapper-detectors.bash
+
 ### enable
 
 ```
+crontab -e
+
+# Anomaly Detection
  */5 * * * * /data/dam/wrapper-detectors.bash >> /var/log/dam-detectors.log 2>&1
 ```
 
