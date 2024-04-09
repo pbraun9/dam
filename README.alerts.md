@@ -1,33 +1,36 @@
 # setup alerts
 
-setup elastic/opensearch alerts e.g.
+elastic/opensearch search query alerts
 
 	cp -i hits/suricata-src1024.conf.sample hits/suricata-src1024.conf
 	vi hits/suricata-src1024.conf
 
-	...
+elastic/opensearch count query alerts
 
-	chmod 600 hits/*.conf
+	cp -i hits/suricata-src1024.conf.sample hits/suricata-src1024.conf
+	vi hits/suricata-src1024.conf
+
+elastic/opensearch alive index alerts
+
+	cp -pi alive/suricata.conf.sample alive/suricata.conf
+	vi alive/suricata.conf
 
 ## acceptance
 
-	cd /data/dam/
-
-elastic/opensearch alerts
-
 	ls -lF /var/lock/*.lock
+
+	cd /data/dam/
 	./alert-hit.bash hits/suricata-src1024.conf
-
-service alerts
-
-	./check-svc.bash host service-name
+	#/data/dam/alert-hit-dql.bash ...
+	#/data/dam/alert-count.bash ...
+	./alert-alive.bash /data/dam/alive/suricata.conf
 
 ## enable
 
 ```
 crontab -e
 
-# Query Alerts
+# Search query alerts
 */15 * * * * /data/dam/wrapper-alerts.bash >> /var/log/dam-alerts.log 2>&1
 ```
 

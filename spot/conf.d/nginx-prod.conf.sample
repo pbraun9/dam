@@ -1,0 +1,14 @@
+
+index=nginx-prod-access*
+
+# reference to be obtained with the -prep script
+ref_delay=1w
+ref_percent=5.0
+
+# trigger level above reference for overall traffic
+# 1.236 1.382 1.500 1.618 1.786 2.000
+overall_fib=1.236
+
+# trigger level above reference for a single remote_addr IP
+client_fib=2.000
+

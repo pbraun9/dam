@@ -15,7 +15,7 @@
 ```
 crontab -e
 
-# Performance Monitoring
+# Performance monitoring
    * * * * * /data/dam/wrapper-vmetrics.bash >> /var/log/dam-vmetrics.log 2>&1
 ```
 

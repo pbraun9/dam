@@ -7,15 +7,11 @@ then eventually grab its config (helps to get the syntax right)
 
 list existing detectors with their respective ID
 
-	./detector-list.bash
+	../list-detectors.bash
 
 and grab the sample config
 
 	./detector-get.bash DETECTOR-NAME DETECTOR-ID
-
-or all configs at once
-
-	./wrapper-detector-get.bash
 
 ## generate new detectors
 

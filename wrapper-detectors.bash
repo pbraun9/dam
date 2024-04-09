@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo `date --rfc-email` - ${0##*/}
-/data/dam/contrib/detector-list.bash | grep -vE '^#|^$' | while read line; do
+/data/dam/list-detectors.bash | grep -vE '^#|^$' | while read line; do
 	detector=`echo $line | cut -f1 -d,`
 	id=`echo $line | cut -f2 -d,`
 	custom_index=`echo $line | cut -f3 -d,`

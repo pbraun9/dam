@@ -1,0 +1,29 @@
+{
+    "size": 0,
+    "query": {
+        "bool": {
+            "filter": [
+                {
+                    "query_string": {
+                        "query": "request_time:*"
+                    }
+                },
+                {
+                    "range": {
+                        "@timestamp": {
+                            "from": "now-3d/d",
+                            "to": "now/d"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "aggs": {
+        "request_time_outliner": {
+            "percentiles": {
+                "field": "request_time"
+            }
+        }
+    }
+}

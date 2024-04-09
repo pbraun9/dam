@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# assuming full path for alert_conf_path
+
 function prep_alert {
         # beware of escapes for "`"
         cat <<EOF
@@ -22,16 +24,17 @@ EOF
 
 [[ ! -x `which jq` ]] && echo install jq first && exit 1
 
-[[ -z $1 ]] && echo what alert.conf? && exit 1
-alert_conf=$1
+[[ -z $1 ]] && echo path/to/alert.conf? && exit 1
+alert_conf_path=$1
+alert_conf=${alert_conf_path##*/}
 alert=${alert_conf%\.conf}
 alert=${alert#*/}
 
 [[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
 source /data/dam/dam.conf
 
-[[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
-source /data/dam/$alert_conf
+[[ ! -r $alert_conf_path ]] && echo cannot read $alert_conf_path && exit 1
+source $alert_conf_path
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock

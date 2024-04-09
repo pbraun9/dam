@@ -10,22 +10,24 @@
 
 	mkdir -p /data/
 	cd /data/
-	git clone ...
+	git clone https://github.com/pbraun9/dam.git
 	cd dam/
 	cp -pi dam.conf.sample dam.conf
 	vi dam.conf
 
 	...
 
-	chmod 600 *.conf
+	chmod 600 dam.conf
 
 ## setup
 
 [elastic/opensearch alerts](README.alerts)
 
-[service checks](README.svc)
-
 [anomaly detection](README.detectors)
+
+[spot the attacker](spot/README)
+
+[service checks](README.svc)
 
 [vmetrics](README.vmetrics)
 

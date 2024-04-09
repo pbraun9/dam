@@ -22,7 +22,7 @@ you can now simply proceed with the wrapper
 ```
 crontab -e
 
-# Anomaly Detection
+# Anomaly detection
  */5 * * * * /data/dam/wrapper-detectors.bash >> /var/log/dam-detectors.log 2>&1
 ```
 

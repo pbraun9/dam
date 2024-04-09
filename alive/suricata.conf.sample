@@ -6,7 +6,7 @@ delay_minutes=15
 title="no hit at all in the last $delay_minutes minutes"
 
 # index/stream to search against
-index=logs-suricata1
+index=suricata-*
 
 # query as saved search in elastic/opensearch Discovery
 saved_search_url="no link"
