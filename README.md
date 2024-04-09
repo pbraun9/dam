@@ -21,15 +21,15 @@
 
 ## setup
 
-[elastic/opensearch alerts](README.alerts)
+[elastic/opensearch alerts](README.alerts.md)
 
-[anomaly detection](README.detectors)
+[anomaly detection](README.detectors.md)
 
-[spot the attacker](spot/README)
+[spot the attacker](spot/README.md)
 
-[service checks](README.svc)
+[service checks](README.svc.md)
 
-[vmetrics](README.vmetrics)
+[vmetrics](README.vmetrics.md)
 
 ## resources
 
