@@ -24,6 +24,7 @@ function count_per_ip {
 	[[ -z $user ]]		&& echo func need user && exit 1
 	[[ -z $passwd ]]	&& echo func need passwd && exit 1
 	[[ -z $webhook ]]	&& echo func need webhook && exit 1
+
 	[[ -z $index ]]		&& echo func need index && exit 1
 	[[ -z $ip ]]		&& echo func need ip && exit 1
 	[[ -z $delay ]]		&& echo func need delay && exit 1
@@ -40,7 +41,7 @@ function count_per_ip {
             "filter": [
                 {
                     "query_string": {
-                        "query": "remote_addr:\"$ip\""
+                        "query": "remote_addr:\"$ip\" AND status:*"
                     }
                 },
                 {
@@ -66,7 +67,7 @@ EOF`
             "filter": [
                 {
                     "query_string": {
-                        "query": "remote_addr:\"$ip\" AND !status:[200 TO 304]"
+                        "query": "remote_addr:\"$ip\" AND status:* AND !status:[200 TO 304]"
                     }
                 },
                 {
@@ -87,7 +88,7 @@ EOF`
 
 	echo -e \ $ip \\t\\t $percent vs. $trigger
 
-	text="$index $ip - non-2xx http status $delay $percent% vs. $trigger% (ref $ref_delay $ref_percent% @$client_fib)"
+	text="$index $ip - nok http status $delay $percent% vs. $trigger% (ref $ref_delay $ref_percent% @$client_fib)"
 
 	(( debug > 0 )) && echo "DEBUG - $text"
 
@@ -106,12 +107,12 @@ EOF`
 
 LC_NUMERIC=C
 
-echo $index
+echo $0 $delay - $index
 
 # set trigger level above the reference
 (( trigger = client_fib * ref_percent ))
 
-ips=`/data/dam/bin/query.bash $index 'remote_addr:*' 1m | jq -r '.hits.hits[]._source.remote_addr'`
+ips=`/data/dam/bin/query.bash $index 'status:* AND !remote_addr:\"10.0.0.0/8\"' 1m | jq -r '.hits.hits[]._source.remote_addr'`
 
 frame=${delay##*/}
 frame=`echo $frame | sed -r 's/^[[:digit:]]+//'`

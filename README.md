@@ -33,16 +33,7 @@
 
 ## resources
 
-https://elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-range-query.html
-
 https://api.slack.com/messaging/webhooks
 
 https://api.slack.com/apps/
-
-### anomaly detection
-
-https://opensearch.org/docs/latest/observing-your-data/ad/api/
-
-https://opensearch.org/docs/2.11/observing-your-data/ad/index/
-==> about detection_interval and window_delay
 

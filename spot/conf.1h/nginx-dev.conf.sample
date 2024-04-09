@@ -1,9 +1,9 @@
 
-index=nginx-prod-access*
+index=nginx-dev-access*
 
 # reference to be obtained with the -prep script
-ref_delay=1w
-ref_percent=5.0
+ref_delay=unknown
+ref_percent=1.00
 
 # trigger level above reference for overall traffic
 # 1.236 1.382 1.500 1.618 1.786 2.000

@@ -26,3 +26,10 @@ crontab -e
  */5 * * * * /data/dam/wrapper-detectors.bash >> /var/log/dam-detectors.log 2>&1
 ```
 
+## resources
+
+https://opensearch.org/docs/latest/observing-your-data/ad/api/
+
+https://opensearch.org/docs/2.11/observing-your-data/ad/index/
+==> about detection_interval and window_delay
+

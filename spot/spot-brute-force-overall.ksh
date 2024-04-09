@@ -10,25 +10,22 @@ debug=0
 conf=$1
 delay=$2
 
-[[ -z $conf ]] && echo need \$conf && exit 1
-[[ -z $delay ]] && echo need \$delay && exit 1
-
+[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
 [[ ! -r $conf ]] && echo cannot read $conf && exit 1
+
+source /data/dam/dam.conf
 source $conf
+
+[[ -z $webhook ]]	&& echo define webhook in /data/dam/dam.conf && exit 1
 
 [[ -z $index ]]		&& echo define index in $conf && exit 1
 [[ -z $ref_delay ]]	&& echo define ref_delay in $conf && exit 1
 [[ -z $ref_percent ]]	&& echo define ref_percent in $conf && exit 1
 [[ -z $overall_fib ]]	&& echo define overall_fib in $conf && exit 1
 
-[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
-source /data/dam/dam.conf
-
-[[ -z $webhook ]]	&& echo define webhook in /data/dam/dam.conf && exit 1
-
 LC_NUMERIC=C
 
-echo $index
+echo $0 $delay - $index
 
 typeset -F 4 ref_percent trigger overall_fib
 
@@ -45,7 +42,7 @@ nok=`/data/dam/bin/count.bash $index '!status:[200 TO 304]' $delay`
 
 echo -e \ overall \\t\\t $percent vs. $trigger
 
-text="$index overall - non-2xx http status $delay $percent% vs. $trigger% (ref $ref_delay $ref_percent% @$overall_fib)"
+text="$index overall - nok http status $delay $percent% vs. $trigger% (ref $ref_delay $ref_percent% @$overall_fib)"
 
 if (( percent >= trigger )); then
 	echo "ALARM - $text"

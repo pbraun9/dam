@@ -34,3 +34,7 @@ crontab -e
 */15 * * * * /data/dam/wrapper-alerts.bash >> /var/log/dam-alerts.log 2>&1
 ```
 
+## resources
+
+https://elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-range-query.html
+
