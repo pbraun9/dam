@@ -27,28 +27,36 @@ LC_NUMERIC=C
 
 echo $0 $delay - $index
 
-typeset -F 4 ref_percent trigger overall_fib
+total=`/data/dam/bin/count.bash $index "$query_total" $delay`
 
-# set trigger level above the reference
-(( trigger = overall_fib * ref_percent ))
+# less than 100 entries overall isn't really relevant
+# TODO make that dynamic/proportional
+(( total < 100 )) && echo -e \ overall \\t\\t skip \($total\) && exit
 
-typeset -F 4 total nok percent
+nok=`/data/dam/bin/count.bash $index "$query_nok" $delay`
 
-total=`/data/dam/bin/count.bash $index 'status:*' $delay`
+# total and nok remain integers
+# (ref_percent survives here)
+typeset -F 2 ref_percent percent
+typeset -F 3 result_fib
 
-nok=`/data/dam/bin/count.bash $index '!status:[200 TO 304]' $delay`
+# avoid integer division with 1. float
+(( percent = nok * 1. / total * 100 ))
 
-(( percent = nok / total * 100 ))
+(( result_fib = percent / ref_percent ))
 
-echo -e \ overall \\t\\t $percent vs. $trigger
+(( debug > 0 )) && echo " DEBUG (( $result_fib = $percent / $ref_percent ))"
 
-text="$index overall - nok http status $delay $percent% vs. $trigger% (ref $ref_delay $ref_percent% @$overall_fib)"
+echo -e \ overall \\t\\t $percent \($total\) as fib $result_fib
 
-if (( percent >= trigger )); then
+if (( result_fib >= overall_fib )); then
+	# $ref_delay $ref_percent $overall_fib
+	text="$index $delay overall - nok http status $percent% out of $total entries ($result_fib)"
+
 	echo "ALARM - $text"
 
         echo -n sending webhook to slack ...
-        curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
+        (( debug < 1 )) && curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
         exit 1
 fi
 

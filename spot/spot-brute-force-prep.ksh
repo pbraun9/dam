@@ -13,19 +13,20 @@ source $conf
 
 LC_NUMERIC=C
 
-typeset -F 4 total nok nok_percent
+# total remains an integer
+typeset -F 4 nok nok_percent
 
-total=`/data/dam/bin/count.bash $index 'status:* AND !remote_addr:\"10.0.0.0/8\"' $delay`
+total=`/data/dam/bin/count.bash $index "$query_total" $delay`
 #echo -n "total count is "
 #printf "%'d" $total
 #echo
 
-nok=`/data/dam/bin/count.bash $index 'status:* AND !status:[200 TO 304] AND !remote_addr:\"10.0.0.0/8\"' $delay`
+nok=`/data/dam/bin/count.bash $index "$query_nok" $delay`
 #echo -n "nok count is "
 #printf "%'d" $nok
 #echo
 
 (( nok_percent = nok / total * 100 ))
 
-echo -e \ $index \\t percentage of NOK status for last $delay is $nok_percent%
+echo -e \ $index $delay \\t NOK status is $nok_percent% out of $total entries
 

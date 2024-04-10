@@ -15,22 +15,30 @@ debug=0
 [[ -z $2 ]] && echo conf delay? && exit 1
 conf=$1
 delay=$2
+frame=${delay##*/}
+frame=`echo $frame | sed -r 's/^[[:digit:]]+//'`
 
 source /data/dam/dam.conf
 source $conf
 
+[[ -z $endpoint ]]	&& echo need endpoint && exit 1
+[[ -z $user ]]		&& echo need user && exit 1
+[[ -z $passwd ]]	&& echo need passwd && exit 1
+[[ -z $webhook ]]	&& echo need webhook && exit 1
+
+[[ -z $index ]]		&& echo need index && exit 1
+[[ -z $query_total ]]	&& echo need query_total && exit 1
+[[ -z $query_nok ]]	&& echo need query_nok && exit 1
+[[ -z $ref_delay ]]	&& echo need ref_delay && exit 1
+[[ -z $ref_percent ]]	&& echo need ref_percent && exit 1
+[[ -z $client_fib ]]	&& echo need client_fib && exit 1
+
+
+[[ ! -x `whence jq` ]]	&& echo install jq first && exit 1
+[[ ! -x `whence host` ]] && echo install host command first && exit 1
+
 function count_per_ip {
-	[[ -z $endpoint ]]	&& echo func need endpoint && exit 1
-	[[ -z $user ]]		&& echo func need user && exit 1
-	[[ -z $passwd ]]	&& echo func need passwd && exit 1
-	[[ -z $webhook ]]	&& echo func need webhook && exit 1
-
-	[[ -z $index ]]		&& echo func need index && exit 1
-	[[ -z $ip ]]		&& echo func need ip && exit 1
-	[[ -z $delay ]]		&& echo func need delay && exit 1
-	[[ -z $frame ]]		&& echo func need frame && exit 1
-
-	typeset -F 4 total nok percent
+	[[ -z $ip ]] && echo func need ip && exit 1
 
 	total=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
 		"$endpoint/$index/_count?pretty" -u $user:$passwd \
@@ -41,7 +49,7 @@ function count_per_ip {
             "filter": [
                 {
                     "query_string": {
-                        "query": "remote_addr:\"$ip\" AND status:*"
+                        "query": "remote_addr:\"$ip\" AND $query_total"
                     }
                 },
                 {
@@ -57,6 +65,10 @@ function count_per_ip {
     }
 }
 EOF`
+
+	# less than 10 entries per client isn't really relevant
+	# TODO make that dynamic/proportional
+	(( total < 10 )) && echo -e \ $ip \\t\\t skip \($total\) && return
 
 	nok=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
 		"$endpoint/$index/_count?pretty" -u $user:$passwd \
@@ -67,7 +79,7 @@ EOF`
             "filter": [
                 {
                     "query_string": {
-                        "query": "remote_addr:\"$ip\" AND status:* AND !status:[200 TO 304]"
+                        "query": "remote_addr:\"$ip\" AND $query_nok"
                     }
                 },
                 {
@@ -84,40 +96,46 @@ EOF`
 }
 EOF`
 
-	(( percent = nok / total * 100 ))
+	# total and nok remain integers
+	# ref_percent remains untouched
+	typeset -F 2 percent
+	typeset -F 3 result_fib
 
-	echo -e \ $ip \\t\\t $percent vs. $trigger
+	# avoid integer division with 1. float
+	(( percent = nok * 1. / total * 100 ))
 
-	text="$index $ip - nok http status $delay $percent% vs. $trigger% (ref $ref_delay $ref_percent% @$client_fib)"
+	(( result_fib = percent / ref_percent ))
 
-	(( debug > 0 )) && echo "DEBUG - $text"
+	(( debug > 0 )) && echo " DEBUG (( $result_fib = $percent / $ref_percent ))"
 
-	if (( percent >= trigger )); then
+	echo -e \ $ip \\t\\t $percent \($total\) as fib $result_fib
+
+	if (( result_fib >= client_fib )); then
+		# $ref_delay $ref_percent $client_fib
+		text="$index $delay $ip - nok http status $percent% out of $total entries ($result_fib)"
+
+		ptr=`host $ip | awk '{print $NF}'`
+		text="$text - \`$ptr\`"
+
 		echo "ALARM - $text"
 
 		echo -n sending webhook to slack ...
-		curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
+		(( debug < 1 )) && curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
 		# do not exit here
+
+		unset ptr
 	fi
 
-	unset total nok percent
+	unset total nok percent result_fib
 }
-
-[[ ! -x `whence jq` ]] && echo install jq first && exit 1
 
 LC_NUMERIC=C
 
 echo $0 $delay - $index
 
-# set trigger level above the reference
-(( trigger = client_fib * ref_percent ))
+ips=`/data/dam/bin/query.bash $index "$query_total" $delay | jq -r '.hits.hits[]._source.remote_addr'`
 
-ips=`/data/dam/bin/query.bash $index 'status:* AND !remote_addr:\"10.0.0.0/8\"' 1m | jq -r '.hits.hits[]._source.remote_addr'`
-
-frame=${delay##*/}
-frame=`echo $frame | sed -r 's/^[[:digit:]]+//'`
-
-(( debug > 0 )) && echo -e \\n active ips \\n $ips \\n
+(( debug > 0 )) && echo -e \\n DEBUG active ips \\n $ips \\n
 
 for ip in $ips; do
         count_per_ip

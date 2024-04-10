@@ -4,7 +4,7 @@
 
 ### spot web path brute force
 
-we want to differenciate 2xx and 301-304 http status codes from the rest (incl. 4xx and 5xx)
+we want to differenciate 2xx and 301-304 http status codes from the rest (incl. 101, 4xx and 5xx)
 
     cd conf.d/
     cp -pi nginx-prod.conf.sample nginx-prod.conf
@@ -35,10 +35,10 @@ now you know what to expect in terms of failed http requests
 ```
 # Track relative amount of non-2xx http status codes
  20 04 * * * /data/dam/spot/wrapper-spot-brute-force-prep.bash          >> /var/log/dam-spot-prep.log 2>&1
-  01 * * * * /data/dam/spot/wrapper-spot-brute-force-overall.bash 1h    >> /var/log/dam-spot-overall.log 2>&1
-  02 * * * * /data/dam/spot/wrapper-spot-brute-force-client.bash 1h     >> /var/log/dam-spot-client.log 2>&1
- */3 * * * * /data/dam/spot/wrapper-spot-brute-force-overall.bash 3m    >> /var/log/dam-spot-overall.log 2>&1
- */3 * * * * /data/dam/spot/wrapper-spot-brute-force-client.bash 3m     >> /var/log/dam-spot-client.log 2>&1
+  01 * * * * /data/dam/spot/wrapper-spot-brute-force-overall.bash 1h    >> /var/log/dam-spot-overall-1h.log 2>&1
+  02 * * * * /data/dam/spot/wrapper-spot-brute-force-client.bash 1h     >> /var/log/dam-spot-client-1h.log 2>&1
+ */3 * * * * /data/dam/spot/wrapper-spot-brute-force-overall.bash 3m    >> /var/log/dam-spot-overall-3m.log 2>&1
+ */3 * * * * /data/dam/spot/wrapper-spot-brute-force-client.bash 3m     >> /var/log/dam-spot-client-3m.log 2>&1
 ```
 
 ## resources
