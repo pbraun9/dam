@@ -19,6 +19,7 @@ frame=${delay##*/}
 frame=`echo $frame | sed -r 's/^[[:digit:]]+//'`
 
 source /data/dam/dam.conf
+source /data/dam/damlib.ksh
 source $conf
 
 [[ -z $endpoint ]]	&& echo need endpoint && exit 1
@@ -108,11 +109,13 @@ EOF`
 
 	(( debug > 0 )) && echo " DEBUG (( $result_fib = $percent / $ref_percent ))"
 
-	echo -e \ $ip \\t\\t $percent \($total\) as fib $result_fib
+	hits_per_second
+
+	echo -e \ $ip \\t\\t $percent \($total\) as fib $result_fib and $hits hits per second
 
 	if (( result_fib >= client_fib )); then
 		# $ref_delay $ref_percent $client_fib
-		text="$index $delay $ip - nok http status $percent% out of $total entries ($result_fib)"
+		text="$index $delay $ip - nok http status $percent% out of $total entries as fib $result_fib and $hits hits per second"
 
 		ptr=`host $ip | awk '{print $NF}'`
 		text="$text - \`$ptr\`"

@@ -1,27 +1,13 @@
 #!/bin/bash
 set -e
 
-debug=0
-
-# 
-# query-aggs-*
-#
-# aggs allows to perform operation against a specific aggregated field
-# which should be either numeric or keyword
-#
-# query allows to either grab only affected entries (with field present)
-# --or-- to refine the search to reduce aggregation scope
-#
+# 0|1|2
+debug=1
 
 function usage {
 	cat <<EOF
 
-	${0##*/} index/stream lucene-query delay field [0|size]
-
-	e.g.
-
-	${0##*/} 'nginx-prod-*' '!remote_addr:\"10.0.0.0/8\"' 1d remote_addr
-	${0##*/} 'nginx-prod-*' 'status:*' 1d status
+	${0##*/} index/stream lucene-query delay field [size]
 
 EOF
 	exit 1
@@ -34,22 +20,24 @@ delay=$3
 field=$4
 size=$5
 
-[[ -z $size ]] && size=3
+fieldshort=${field%\.keyword}
 
 source /data/dam/dam.conf
 
-(( debug > 0 )) && echo index is $index
-(( debug > 0 )) && echo query is $query
-(( debug > 0 )) && echo delay is $delay
-(( debug > 0 )) && echo field is $field
-(( debug > 0 )) && echo size is $size
+(( debug > 1 )) && echo index is $index
+(( debug > 1 )) && echo query is $query
+(( debug > 1 )) && echo delay is $delay
+(( debug > 1 )) && echo field is $field
+(( debug > 1 )) && echo size is $size
 
 frame=${delay##*/}
 frame=`echo $frame | sed -r 's/^[[:digit:]]+//'`
 
-(( debug > 0 )) && echo frame is $frame
+(( debug > 1 )) && echo frame is $frame
 
-cat > /var/tmp/query-aggs-tmp.json <<EOF
+debugfile=/var/tmp/query-aggs-terms.json
+
+cat > $debugfile <<EOF
 {
     "size": 0,
     "query": {
@@ -63,8 +51,8 @@ cat > /var/tmp/query-aggs-tmp.json <<EOF
                 {
                     "range": {
                         "@timestamp": {
-                            "from": "now-$delay",
-                            "to": "now/$frame"
+                            "from": "now-$delay/$frame",
+                            "to": "now"
                         }
                     }
                 }
@@ -72,16 +60,16 @@ cat > /var/tmp/query-aggs-tmp.json <<EOF
         }
     },
     "aggs": {
-        "count": {
+        "terms_$fieldshort": {
             "terms": {
                 "field": "$field",
 EOF
 
-(( size != 0 )) && cat >> /var/tmp/query-aggs-tmp.json <<EOF
+[[ -n $size ]] && cat >> $debugfile <<EOF
                 "size": $size,
 EOF
 
-cat >> /var/tmp/query-aggs-tmp.json <<EOF
+cat >> $debugfile <<EOF
                 "order": [
                     {
                         "_count": "desc"
@@ -95,7 +83,7 @@ EOF
 
 curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd \
-	-d @/var/tmp/query-aggs-tmp.json
+	-d @$debugfile
 
-(( debug > 0 )) && echo cat /var/tmp/query-aggs-tmp.json || rm -f /var/tmp/query-aggs-tmp.json
+(( debug > 0 )) || rm -f $debugfile
 

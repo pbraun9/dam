@@ -1,12 +1,13 @@
 #!/bin/bash
 set -e
 
-debug=0
+# 0|1|2
+debug=1
 
 function usage {
 	cat <<EOF
 
-	${0##*/} index/stream lucene-query delay
+	${0##*/} index/stream lucene-query delay [size]
 
 EOF
 	exit 1
@@ -16,21 +17,30 @@ EOF
 index=$1
 query=$2
 delay=$3
+size=$4
 
 source /data/dam/dam.conf
 
-(( debug > 0 )) && echo index is $index
-(( debug > 0 )) && echo query is $query
-(( debug > 0 )) && echo delay is $delay
+(( debug > 1 )) && echo index is $index
+(( debug > 1 )) && echo query is $query
+(( debug > 1 )) && echo delay is $delay
 
 frame=${delay##*/}
 frame=`echo $frame | sed -r 's/^[[:digit:]]+//'`
 
-(( debug > 0 )) && echo frame is $frame
+(( debug > 1 )) && echo frame is $frame
 
-    #"size": 0,
-cat > /var/tmp/query-tmp.json <<EOF
+debugfile=/var/tmp/query.json
+
+cat > $debugfile <<EOF
 {
+EOF
+
+[[ -n $size ]] && cat >> $debugfile <<EOF
+    "size": $size,
+EOF
+
+cat >> $debugfile <<EOF
     "query": {
         "bool": {
             "filter": [
@@ -55,7 +65,7 @@ EOF
 
 curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd \
-	-d @/var/tmp/query-tmp.json
+	-d @$debugfile
 
-(( debug > 0 )) && echo cat /var/tmp/query-tmp.json || rm -f /var/tmp/query-tmp.json
+(( debug > 0 )) || rm -f $debugfile
 
