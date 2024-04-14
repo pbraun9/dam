@@ -1,6 +1,7 @@
 #!/bin/ksh
 set -e
 
+# 0|1|2
 debug=0
 
 #

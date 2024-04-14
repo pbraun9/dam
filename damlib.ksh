@@ -12,12 +12,19 @@ function check_var {
 	unset tmp
 }
 
-# requires delay frame total
 # defines hits
-function hits_per_second {
+hits_per_second() {
+	[[ -z $delay ]] && bomb $0 misses delay
+	[[ -z $frame ]] && bomb $0 misses frame
+	[[ -z $total ]] && bomb $0 misses total
+
+	(( debug > 1 )) && echo debug: delay is $delay
+	(( debug > 1 )) && echo debug: frame is $frame
+	(( debug > 1 )) && echo debug: total is $total
+
 	int=`echo $delay | sed -r 's/([[:digit:]])[[:alpha:]]/\1/'`
 
-	typeset -F2 hits
+	(( debug > 1 )) && echo debug: int is $int
 
 	if [[ $frame = m ]]; then
 		(( hits = total / ( int * 60 ) ))
@@ -34,5 +41,9 @@ function hits_per_second {
 	fi
 
 	unset int
+
+	(( debug > 1 )) && echo debug: hits is $hits
+
+	[[ -z $hits ]] && bomb $0 failed to define hits
 }
 
