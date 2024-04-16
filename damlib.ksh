@@ -22,9 +22,11 @@ hits_per_second() {
 	(( debug > 1 )) && echo debug: frame is $frame
 	(( debug > 1 )) && echo debug: total is $total
 
-	int=`echo $delay | sed -r 's/([[:digit:]])[[:alpha:]]/\1/'`
+	typeset -F2 int=`echo $delay | sed -r 's/([[:digit:]])[[:alpha:]]/\1/'`
 
 	(( debug > 1 )) && echo debug: int is $int
+
+	typeset -F2 hits
 
 	if [[ $frame = m ]]; then
 		(( hits = total / ( int * 60 ) ))

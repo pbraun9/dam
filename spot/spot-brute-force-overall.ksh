@@ -25,7 +25,7 @@ source $conf
 
 LC_NUMERIC=C
 
-echo $0 $delay - $index
+echo `date --rfc-email` - ${0##*/} - $index - $delay
 
 total=`/data/dam/bin/count.bash $index "$query_total" $delay`
 
@@ -45,18 +45,20 @@ typeset -F 3 result_fib
 
 (( result_fib = percent / ref_percent ))
 
-(( debug > 0 )) && echo " DEBUG (( $result_fib = $percent / $ref_percent ))"
+(( debug > 0 )) && echo "debug: (( $result_fib = $percent / $ref_percent ))"
 
-echo -e \ overall \\t\\t $percent \($total\) as fib $result_fib
+echo \ overall - nok http status $percent% out of $total entries as fib $result_fib
 
 if (( result_fib >= overall_fib )); then
 	# $ref_delay $ref_percent $overall_fib
 	text="$index $delay overall - nok http status $percent% out of $total entries ($result_fib)"
 
-	echo "ALARM - $text"
+	echo " ALARM - $text"
 
-        echo -n sending webhook to slack ...
+        echo -n \ sending webhook to slack ...
         (( debug < 1 )) && curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
         exit 1
 fi
+
+echo
 

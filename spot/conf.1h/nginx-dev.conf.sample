@@ -8,6 +8,8 @@ query_nok='status:* AND !status:[200 TO 304]'
 ref_delay=1w
 ref_percent=1.00
 
+score_trigger=10
+
 overall_fib=1.236
 
 client_fib=2.000
