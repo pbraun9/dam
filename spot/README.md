@@ -34,11 +34,9 @@ now you know what to expect in terms of failed http requests
 
 ```
 # Track relative amount of non-2xx http status codes
- 20 04 * * * /data/dam/spot/wrapper-spot-brute-force-prep.bash          >> /var/log/dam-spot-prep.log 2>&1
-  01 * * * * /data/dam/spot/wrapper-spot-brute-force-overall.bash 1h    >> /var/log/dam-spot-overall-1h.log 2>&1
-  02 * * * * /data/dam/spot/wrapper-spot-brute-force-client.bash 1h     >> /var/log/dam-spot-client-1h.log 2>&1
- */3 * * * * /data/dam/spot/wrapper-spot-brute-force-overall.bash 3m    >> /var/log/dam-spot-overall-3m.log 2>&1
- */3 * * * * /data/dam/spot/wrapper-spot-brute-force-client.bash 3m     >> /var/log/dam-spot-client-3m.log 2>&1
+ 20 04 * * * /data/dam/spot/wrapper-spot-brute-force-prep.bash  >> /var/log/dam-spot-prep.log 2>&1
+  02 * * * * /data/dam/spot/wrapper-spot-brute-force.bash 1h    >> /var/log/dam-spot-1h.log 2>&1
+ */3 * * * * /data/dam/spot/wrapper-spot-brute-force.bash 3m    >> /var/log/dam-spot-3m.log 2>&1
 ```
 
 ## resources
