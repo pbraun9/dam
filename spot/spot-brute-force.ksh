@@ -19,7 +19,7 @@ debug=1
 # assuming conf relative path /data/dam/spot/
 #
 
-[[ -z $2 ]] && echo -e \\n \ usage: ${0##*/} conf.xx/conf delay \\n && exit 1
+[[ -z $2 ]] && echo -e \\n \ usage: ${0##*/} conf.d/conf delay \\n && exit 1
 conf=/data/dam/spot/$1
 delay=$2
 frame=${delay##*/}
