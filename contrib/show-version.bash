@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source dam.conf
+source /data/dam/dam.conf
 
 echo
 echo VERSION

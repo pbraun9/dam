@@ -2,7 +2,7 @@
 set -e
 
 # 0|1|2
-debug=1
+debug=0
 
 #
 # overall
@@ -49,65 +49,69 @@ source $conf
 [[ ! -x `whence jq` ]]	&& echo install jq first && exit 1
 [[ ! -x `whence host` ]] && echo install host command first && exit 1
 
+function send_alarm {
+	text="$1"
+
+	(( debug > 0 )) && echo " $item cont. - ALARM: $text"
+
+	(( debug < 1 )) && echo -n \ sending webhook to slack ...
+	(( debug < 1 )) && curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook \
+		&& echo
+}
+
 function count_overall {
 	# less than 100 entries overall isn't really relevant
 	# TODO make that dynamic/proportional
-	(( total < 100 )) && echo \ overall - skip $total entries && return
+	(( overall_total < 100 )) && echo \ overall - skip $overall_total entries && return
 
-	(( debug > 1 )) && echo "debug: (( $total < 100 ))"
+	(( debug > 1 )) && echo "debug: (( $overall_total < 100 ))"
 
 	nok=`/data/dam/bin/count.bash $index "$query_nok" $delay`
 
 	(( debug > 1 )) && echo "debug: nok $nok"
 
-	# total and nok remain integers
+	# overall_total and nok remain integers
 	# avoid integer division with 1. float
 	typeset -F 2 percent
-	(( percent = nok * 1. / total * 100 ))
+	(( percent = nok * 1. / overall_total * 100 ))
 
-	(( debug > 1 )) && echo "debug: (( $percent = $nok * 1. / $total * 100 ))"
+	(( debug > 1 )) && echo "debug: (( $percent = $nok * 1. / $overall_total * 100 ))"
 
 	typeset -F 3 result_fib
 	(( result_fib = percent / ref_percent ))
 
 	(( debug > 1 )) && echo "debug: (( $result_fib = $percent / $ref_percent ))"
 
-	(( debug > 1 )) && echo "debug: (( $result_fib = $percent / $ref_percent ))"
+	# $ref_delay $ref_percent $overall_fib
+	text="nok http status $percent% out of $overall_total entries as fib $result_fib"
 
-	echo \ overall - nok http status $percent% out of $total entries as fib $result_fib
+	echo \ overall - $text
 
 	if (( result_fib >= overall_fib )); then
-		# $ref_delay $ref_percent $overall_fib
-		text="$index $delay overall - nok http status $percent% out of $total entries ($result_fib)"
-
-		echo " ALARM - $text"
-
-		(( debug < 1 )) && echo -n \ sending webhook to slack ...
-		(( debug < 1 )) && curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
-		# do not exit here
+		send_alarm "$index $delay overall - $text"
 	fi
 }
 
-function count_per_ip {
-	[[ -z $ip ]] && echo func need ip && exit 1
+function count_per_vhost {
+	[[ -z $vhost ]] && echo function $0 needs vhost && exit 1
 
-	total=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
-		"$endpoint/$index/_count?pretty" -u $user:$passwd \
-		-d @- | jq -r .count
+        typeset -g total=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
+                "$endpoint/$index/_count?pretty" -u $user:$passwd \
+                -d @- | jq -r .count
 {
     "query": {
         "bool": {
             "filter": [
                 {
                     "query_string": {
-                        "query": "remote_addr:\"$ip\" AND $query_total"
+                        "query": "$query_total_vhost AND vhost:\"$vhost\""
                     }
                 },
                 {
                     "range": {
                         "@timestamp": {
                             "from": "now-$delay/$frame",
-                            "to": "now/$frame"
+                            "to": "now"
                         }
                     }
                 }
@@ -117,13 +121,75 @@ function count_per_ip {
 }
 EOF`
 
-	# less than 10 entries per client isn't really relevant
-	# TODO make that dynamic/proportional
-	(( total < 10 )) && echo \ $ip - skip $total entries && return
+	(( debug > 1 )) && echo debug: $vhost - total $total
+
+	typeset -g nok=`cat <<EOF | tee /var/tmp/debug.json | curl -sk -X POST -H "Content-Type: application/json" \
+		"$endpoint/$index/_count?pretty" -u $user:$passwd \
+		-d @- | tee /var/tmp/debug-result.json | jq -r .count
+{
+    "query": {
+        "bool": {
+            "filter": [
+                {
+                    "query_string": {
+                        "query": "$query_nok_vhost AND vhost:\"$vhost\""
+                    }
+                },
+                {
+                    "range": {
+                        "@timestamp": {
+                            "from": "now-$delay/$frame",
+                            "to": "now"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
+EOF`
+
+	(( debug > 1 )) && echo debug: $vhost - nok $nok
+
+	return 0
+}
+
+function count_per_ip {
+	[[ -z $ip ]] && echo function $0 needs ip && exit 1
+
+	typeset -g total=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
+		"$endpoint/$index/_count?pretty" -u $user:$passwd \
+		-d @- | jq -r .count
+{
+    "query": {
+        "bool": {
+            "filter": [
+                {
+                    "query_string": {
+                        "query": "$query_total AND remote_addr:\"$ip\""
+                    }
+                },
+                {
+                    "range": {
+                        "@timestamp": {
+                            "from": "now-$delay/$frame",
+                            "to": "now"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
+EOF`
 
 	(( debug > 1 )) && echo debug: $ip - total $total
 
-	nok=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
+	# less than 10 entries per client isn't really relevant
+	# TODO make that dynamic/proportional
+	(( total < 10 )) && echo \ $ip - skip $total entries && return 1
+
+	typeset -g nok=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
 		"$endpoint/$index/_count?pretty" -u $user:$passwd \
 		-d @- | jq -r .count
 {
@@ -139,7 +205,7 @@ EOF`
                     "range": {
                         "@timestamp": {
                             "from": "now-$delay/$frame",
-                            "to": "now/$frame"
+                            "to": "now"
                         }
                     }
                 }
@@ -149,55 +215,76 @@ EOF`
 }
 EOF`
 
+	(( debug > 1 )) && echo debug: $ip - nok $nok
+
+	return 0
+}
+
+function attack_score {
+	item_type=$1
+	[[ -z $item_type ]] && echo function $0 needs item_type && exit 1
+
+	[[ -z $total ]] && echo function $0 needs total && exit 1
+	[[ -z $nok ]] && echo function $0 needs nok && exit 1
+	[[ -z $ref_percent ]] && echo function $0 needs ref_percent && exit 1
+	[[ -z $overall_total ]] && echo function $0 needs overall_total && exit 1
+
 	# total and nok remain integers
 	# ref_percent remains untouched
-	typeset -F 2 percent
-	typeset -F 3 result_fib
 
 	# avoid integer division with 1. float
+	typeset -F 2 percent
 	(( percent = nok * 1. / total * 100 ))
+	(( debug > 1 )) && echo "debug: $item - (( $percent = $nok * 1. / $total * 100 ))"
 
-	(( debug > 1 )) && echo "debug: $ip - (( $percent = $nok * 1. / $total * 100 ))"
-
+	typeset -F 3 result_fib
 	(( result_fib = percent / ref_percent ))
+	(( debug > 1 )) && echo "debug: $item - (( $result_fib = $percent / $ref_percent ))"
 
-	(( debug > 1 )) && echo "debug: $ip - (( $result_fib = $percent / $ref_percent ))"
+	typeset -F2 item_ratio
+	(( item_ratio = total * 100.00 / overall_total ))
+	(( debug > 1 )) && echo "debug: (( $item_ratio = $total * 100 / $overall_total ))"
 
-	echo -e \ $ip - nok http status $percent% out of $total entries as fib $result_fib
 
-	if (( result_fib > 1.000 )); then
+	# $ref_delay $ref_percent $overall_fib
+	text="$item ($item_ratio%) - nok http status $percent% out of $total entries as fib $result_fib"
+
+	echo \ $text
+
+	if [[ $item_type = vhost && $result_fib -ge $overall_fib ]]; then
+		send_alarm "$index $delay $text"
+	elif [[ $item_type = ip && $result_fib -gt 1.000 ]]; then
 		hits_per_second
 
-		(( debug > 1 )) && echo debug: $ip - hits $hits
+		(( debug > 1 )) && echo debug: $item - hits $hits
 
-		typeset -F2 score
-
+		typeset -F 2 score
 		(( score = hits * percent * result_fib ))
 
-		(( debug > 1 )) && echo "debug: $ip - (( $score = $hits * $percent * $result_fib ))"
+		(( debug > 1 )) && echo "debug: $item - (( $score = $hits * $percent * $result_fib ))"
 
+		# we do not take item_ratio into consideration for scoring
+		# what ever the load an attacker produces can be hidden by heavy-duty upstream
+		# however we report on abnormal IP ratio thereafter
 		if (( score > score_trigger )); then
-			# $ref_delay $ref_percent $client_fib
-			text="$index $delay $ip - nok http status $percent% out of $total entries as fib $result_fib for $hits hits per second and score $score"
+			ptr=`host $item | awk '{print $NF}'`
 
-			ptr=`host $ip | awk '{print $NF}'`
-			text="$text - \`$ptr\`"
-
-			echo " ALARM - $text"
-
-			(( debug < 1 )) && echo -n \ sending webhook to slack ...
-			(( debug < 1 )) && curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
-			# do not exit here
+			send_alarm "$index $delay $text
+$hits hits per second / score $score / \`$ptr\`"
 
 			unset ptr
 		else
-			echo \ $ip - score $score below score_trigger $score_trigger
+			echo \ $item cont. - score $score below score_trigger $score_trigger
 		fi
 
-		unset score
 	fi
 
-	unset total nok percent result_fib hits
+	if [[ $item_type = ip ]]; then
+		(( hits >= 0.90 )) && echo \ $item cont. - WARN: $hits hits per second above 90%
+		(( item_ratio > 0.20 )) && echo \ $item cont. - WARN: item_ratio $item_ratio is above 20%
+	fi
+
+	return 0
 }
 
 LC_NUMERIC=C
@@ -209,9 +296,9 @@ echo `date --rfc-email` - ${0##*/} - $index - $delay
 #
 
 # this variable we need thereafter
-total=`/data/dam/bin/count.bash $index "$query_total" $delay`
+overall_total=`/data/dam/bin/count.bash $index "$query_total" $delay`
 
-(( debug > 1 )) && echo "debug: total $total"
+(( debug > 1 )) && echo "debug: overall_total $overall_total"
 
 typeset -F 2 ref_percent
 
@@ -221,15 +308,39 @@ typeset -F 2 ref_percent
 count_overall
 
 #
+# per vhost
+#
+
+vhosts=`/data/dam/bin/query.bash $index "$query_total_vhost" $delay | jq -r '.hits.hits[]._source.vhost' | sort -u`
+
+(( debug > 0 )) && echo debug: active vhosts are $vhosts
+
+for vhost in $vhosts; do
+	typeset -n item=vhost
+
+	# count_per_vhost globally defines total nok
+	# first function may skip second function with exit code
+	count_per_vhost && attack_score vhost
+
+	unset item total nok
+done; unset vhost
+
+#
 # per client
 #
 
-ips=`/data/dam/bin/query.bash $index "$query_total" $delay | jq -r '.hits.hits[]._source.remote_addr'`
+ips=`/data/dam/bin/query.bash $index "$query_total AND status:*" $delay | jq -r '.hits.hits[]._source.remote_addr' | sort -uV`
 
 (( debug > 0 )) && echo debug: active ips are $ips
 
 for ip in $ips; do
-        count_per_ip
+	typeset -n item=ip
+
+	# count_per_ip globally defines total nok
+        # first function may skip second function with exit code
+        count_per_ip && attack_score ip
+
+	unset item total nok
 done; unset ip
 
 echo

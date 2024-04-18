@@ -7,14 +7,13 @@ index=nginx-prod-access
 query_total='status:* AND !remote_addr:\"10.0.0.0/8\"'
 query_nok='status:* AND !status:[200 TO 304] AND !remote_addr:\"10.0.0.0/8\"'
 
+# scoring level trigger at which we send alerts
+score_trigger=10
+
 # reference to be obtained with the -prep script
 ref_delay=1w
 ref_percent=1.00
-
 # trigger level above reference for overall traffic
 # 1.236 1.382 1.500 1.618 1.786 2.000
 overall_fib=1.786
-
-# scoring level trigger at which we send alerts
-score_trigger=10
 

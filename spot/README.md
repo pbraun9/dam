@@ -1,16 +1,33 @@
 # dam - spot the attacker
 
+## goals
+
+- spot web path brute forces
+- spot auth attempt brute forces
+- spot failing services
+
+## descr
+
+the `spot-brute-force` script is calling the **count API twice**
+
+    1   OK http codes
+    2   NOK http codes
+
+and that for different scopes
+
+    overall
+    per vhost
+    per remote_addr
+
+and different timeframes according to the cron job and delay configuration setting.
+
 ## setup
 
-### spot web path brute force
-
-we want to differenciate 2xx and 301-304 http status codes from the rest (incl. 101, 4xx and 5xx)
+we want to differenciate valid/OK http status codes from the rest
 
     cd conf.d/
     cp -pi nginx-prod.conf.sample nginx-prod.conf
     vi nginx-prod.conf
-
-    index=...
 
 define the thresholds
 
@@ -21,14 +38,6 @@ now you know what to expect in terms of failed http requests
     vi nginx-prod.conf
 
     ref_percent=...
-
-## acceptance
-
-    /data/dam/spot/wrapper-spot-brute-force-overall.bash 3m
-    /data/dam/spot/wrapper-spot-brute-force-client.bash 3m
-
-    /data/dam/spot/wrapper-spot-brute-force-overall.bash 1h
-    /data/dam/spot/wrapper-spot-brute-force-client.bash 1h
 
 ## enable
 

@@ -5,9 +5,9 @@ index=nginx-dev-access
 query_total='status:*'
 query_nok='status:* AND !status:[200 TO 304]'
 
+score_trigger=10
+
 ref_delay=1w
 ref_percent=1.00
-
 overall_fib=1.236
-score_trigger=10
 
