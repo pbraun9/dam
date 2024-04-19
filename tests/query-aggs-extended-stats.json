@@ -20,8 +20,8 @@
         }
     },
     "aggs": {
-        "percentiles_request_time": {
-            "percentiles": {
+        "extended_stats_request_time": {
+            "extended_stats": {
                 "field": "request_time"
             }
         }

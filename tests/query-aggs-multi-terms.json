@@ -5,7 +5,7 @@
             "filter": [
                 {
                     "query_string": {
-                        "query": "request_time:*"
+                        "query": "status:*"
                     }
                 },
                 {
@@ -20,10 +20,15 @@
         }
     },
     "aggs": {
-        "percentiles_request_time": {
-            "percentiles": {
-                "field": "request_time"
+        "multi_terms_vhost_page": {
+            "multi_terms": {
+                "size": 3,
+                "terms": [
+                    { "field": "vhost.keyword" },
+                    { "field": "page.keyword" }
+                ]
             }
         }
     }
 }
+

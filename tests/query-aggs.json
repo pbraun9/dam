@@ -5,7 +5,7 @@
             "filter": [
                 {
                     "query_string": {
-                        "query": "request_time:*"
+                        "query": "status:* AND !status:[101 TO 304]"
                     }
                 },
                 {
@@ -19,10 +19,16 @@
             ]
         }
     },
-    "aggs": {
-        "percentiles_request_time": {
-            "percentiles": {
-                "field": "request_time"
+    "aggregations": {
+        "count": {
+            "terms": {
+                "field": "status",
+                "size": 3,
+                "order": [
+                    {
+                        "_count": "desc"
+                    }
+                ]
             }
         }
     }

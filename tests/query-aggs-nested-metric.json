@@ -1,0 +1,42 @@
+{
+  "size": 0,
+  "query": {
+      "bool": {
+          "filter": [
+              {
+                  "query_string": {
+                      "query": "status:*"
+                  }
+              },
+              {
+                  "range": {
+                      "@timestamp": {
+                          "from": "now-5m/m",
+                          "to": "now"
+                      }
+                  }
+              }
+          ]
+      }
+  },
+  "aggs": {
+    "terms_vhost_page": {
+      "terms": {
+        "size": 3,
+        "field": "vhost.keyword"
+      },
+      "aggs": {
+        "avg_request_time": {
+          "avg": {
+            "field": "request_time"
+          }
+        },
+        "max_request_time": {
+          "max": {
+            "field": "request_time"
+          }
+        }
+      }
+    }
+  }
+}

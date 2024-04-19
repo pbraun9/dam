@@ -1,0 +1,49 @@
+{
+    "size": 0,
+    "query": {
+        "bool": {
+            "filter": [
+                {
+                    "query_string": {
+                        "query": "status:*"
+                    }
+                },
+                {
+                    "range": {
+                        "@timestamp": {
+                            "from": "now-5m/m",
+                            "to": "now"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "aggs": {
+        "terms_vhost": {
+            "terms": {
+                "size": 3,
+                "field": "vhost.keyword",
+                "order": [
+                    {
+                        "_count": "desc"
+                    }
+                ]
+            },
+            "aggs": {
+                "terms_page": {
+                    "terms": {
+                        "size": 3,
+                        "field": "page.keyword",
+                        "order": [
+                            {
+                                "_count": "desc"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
+
