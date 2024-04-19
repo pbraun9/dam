@@ -60,36 +60,19 @@ function send_alarm {
 }
 
 function count_overall {
+	typeset -g total=$overall_total
+
 	# less than 100 entries overall isn't really relevant
 	# TODO make that dynamic/proportional
-	(( overall_total < 100 )) && echo \ overall - skip $overall_total entries && return
+	(( overall_total < 100 )) && echo \ overall - skip $overall_total entries && return 1
 
 	(( debug > 1 )) && echo "debug: (( $overall_total < 100 ))"
 
-	nok=`/data/dam/bin/count.bash $index "$query_nok" $delay`
+	typeset -g nok=`/data/dam/bin/count.bash $index "$query_nok" $delay`
 
 	(( debug > 1 )) && echo "debug: nok $nok"
 
-	# overall_total and nok remain integers
-	# avoid integer division with 1. float
-	typeset -F 2 percent
-	(( percent = nok * 1. / overall_total * 100 ))
-
-	(( debug > 1 )) && echo "debug: (( $percent = $nok * 1. / $overall_total * 100 ))"
-
-	typeset -F 3 result_fib
-	(( result_fib = percent / ref_percent ))
-
-	(( debug > 1 )) && echo "debug: (( $result_fib = $percent / $ref_percent ))"
-
-	# $ref_delay $ref_percent $overall_fib
-	text="nok http status $percent% out of $overall_total entries as fib $result_fib"
-
-	echo \ overall - $text
-
-	if (( result_fib >= overall_fib )); then
-		send_alarm "$index $delay overall - $text"
-	fi
+	return 0
 }
 
 function count_per_vhost {
@@ -229,7 +212,7 @@ function attack_score {
 	[[ -z $ref_percent ]] && echo function $0 needs ref_percent && exit 1
 	[[ -z $overall_total ]] && echo function $0 needs overall_total && exit 1
 
-	# total and nok remain integers
+	# overall_total total nok remain integers
 	# ref_percent remains untouched
 
 	# avoid integer division with 1. float
@@ -241,10 +224,13 @@ function attack_score {
 	(( result_fib = percent / ref_percent ))
 	(( debug > 1 )) && echo "debug: $item - (( $result_fib = $percent / $ref_percent ))"
 
-	typeset -F2 item_ratio
-	(( item_ratio = total * 100.00 / overall_total ))
-	(( debug > 1 )) && echo "debug: (( $item_ratio = $total * 100 / $overall_total ))"
-
+	if [[ item_type = overall ]]; then
+		item_ratio=100
+	else
+		typeset -F2 item_ratio
+		(( item_ratio = total * 100.00 / overall_total ))
+		(( debug > 1 )) && echo "debug: (( $item_ratio = $total * 100 / $overall_total ))"
+	fi
 
 	# $ref_delay $ref_percent $overall_fib
 	text="$item ($item_ratio%) - nok http status $percent% out of $total entries as fib $result_fib"
@@ -291,6 +277,9 @@ LC_NUMERIC=C
 
 echo `date --rfc-email` - ${0##*/} - $index - $delay
 
+typeset -F 2 ref_percent
+(( debug > 1 )) && echo ref_percent $ref_percent
+
 #
 # overall
 #
@@ -300,12 +289,9 @@ overall_total=`/data/dam/bin/count.bash $index "$query_total" $delay`
 
 (( debug > 1 )) && echo "debug: overall_total $overall_total"
 
-typeset -F 2 ref_percent
-
-(( debug > 1 )) && echo ref_percent $ref_percent
-
-# variables in function are local
-count_overall
+item=overall
+count_overall && attack_score overall
+unset item total nok
 
 #
 # per vhost
