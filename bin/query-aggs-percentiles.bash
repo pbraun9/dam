@@ -47,7 +47,7 @@ cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
                     "range": {
                         "@timestamp": {
                             "from": "now-$delay/$frame",
-                            "to": "now/$frame"
+                            "to": "now"
                         }
                     }
                 }

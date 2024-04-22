@@ -53,7 +53,7 @@ cat >> $debugfile <<EOF
                     "range": {
                         "@timestamp": {
                             "from": "now-$delay/$frame",
-                            "to": "now/$frame"
+                            "to": "now"
                         }
                     }
                 }

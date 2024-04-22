@@ -1,0 +1,18 @@
+
+index=cloudflare-ZONE
+
+query_total='EdgeResponseStatus:*'
+query_nok='EdgeResponseStatus:* AND !EdgeResponseStatus:[101 TO 304]'
+
+remote_addr_field=source.ip
+vhost_field=ClientRequestHost
+
+score_trigger=10
+
+ref_delay=1w
+ref_percent=5.00
+
+# trigger level above reference for overall traffic
+# 1.236 1.382 1.500 1.618 1.786 2.000
+overall_fib=1.786
+

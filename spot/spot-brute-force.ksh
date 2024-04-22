@@ -41,6 +41,8 @@ source $conf
 [[ -z $index ]]		&& echo define index in $conf && exit 1
 [[ -z $query_total ]]	&& echo define query_total in $conf && exit 1
 [[ -z $query_nok ]]	&& echo define query_nok in $conf && exit 1
+[[ -z $remote_addr_field ]] && echo define remote_addr_field in $conf && exit 1
+[[ -z $vhost_field ]]	&& echo define vhost_field in $conf && exit 1
 [[ -z $ref_delay ]]	&& echo define ref_delay in $conf && exit 1
 [[ -z $ref_percent ]]	&& echo define ref_percent in $conf && exit 1
 [[ -z $score_trigger ]]	&& echo define score_trigger in $conf && exit 1
@@ -52,7 +54,7 @@ source $conf
 function send_alarm {
 	text="$1"
 
-	(( debug > 0 )) && echo " $item cont. - ALARM: $text"
+	(( debug > 0 )) && echo "ALARM: $text"
 
 	(( debug < 1 )) && echo -n \ sending webhook to slack ...
 	(( debug < 1 )) && curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook \
@@ -87,7 +89,7 @@ function count_per_vhost {
             "filter": [
                 {
                     "query_string": {
-                        "query": "$query_total_vhost AND vhost:\"$vhost\""
+                        "query": "$query_total AND $vhost_field:\"$vhost\""
                     }
                 },
                 {
@@ -115,7 +117,7 @@ EOF`
             "filter": [
                 {
                     "query_string": {
-                        "query": "$query_nok_vhost AND vhost:\"$vhost\""
+                        "query": "$query_nok AND $vhost_field:\"$vhost\""
                     }
                 },
                 {
@@ -149,7 +151,7 @@ function count_per_ip {
             "filter": [
                 {
                     "query_string": {
-                        "query": "$query_total AND remote_addr:\"$ip\""
+                        "query": "$query_total AND $remote_addr_field:\"$ip\""
                     }
                 },
                 {
@@ -181,7 +183,7 @@ EOF`
             "filter": [
                 {
                     "query_string": {
-                        "query": "remote_addr:\"$ip\" AND $query_nok"
+                        "query": "$remote_addr_field:\"$ip\" AND $query_nok"
                     }
                 },
                 {
@@ -297,7 +299,7 @@ unset item total nok
 # per vhost
 #
 
-vhosts=`/data/dam/bin/query.bash $index "$query_total_vhost" $delay | jq -r '.hits.hits[]._source.vhost' | sort -u`
+vhosts=`/data/dam/bin/query.bash $index "$query_total" $delay | jq -r ".hits.hits[]._source.$vhost_field" | sort -u`
 
 (( debug > 0 )) && echo debug: active vhosts are $vhosts
 
@@ -315,7 +317,8 @@ done; unset vhost
 # per client
 #
 
-ips=`/data/dam/bin/query.bash $index "$query_total AND status:*" $delay | jq -r '.hits.hits[]._source.remote_addr' | sort -uV`
+ips=`/data/dam/bin/query.bash $index "$query_total" $delay | \
+	jq -r ".hits.hits[]._source.\"$remote_addr_field\"" | sort -uV`
 
 (( debug > 0 )) && echo debug: active ips are $ips
 
