@@ -34,25 +34,23 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		lock=/var/lock/$confshort.$day.$sensor.lock
 		[[ -f $lock ]] && echo $confshort $sensor - there is a lock already for today \($lock\) && continue
 
-		if (( value > max_value )); then
-			text="$confshort ALARM - sensor $sensor value $value is above $max_value"
+		if (( value >= max_value )); then
+			text="$confshort $sensor - ALARM value $value reached $max_value"
+			echo $text
 		else
-			echo $confshort $sensor - value $value is fine, nothing to report
+			echo $confshort $sensor - OK value $value lower than $max_value
 			continue
 		fi
+
+		(( dummy > 0 )) && continue
 
 		text="$text
 ${vmetrics_url}${url_suffix}
 (throttle for today $day)"
 
-		if (( dummy == 1 )); then
-			echo the following would be sent to vmetrics_webhook $vmetrics_webhook
-			echo "$text"
-		else
-			echo -n $confshort $sensor - sending vmetrics_webhook to slack ...
-			curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $vmetrics_webhook; echo
-			touch $lock
-		fi
+		echo -n sending vmetrics_webhook to slack ...
+		curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $vmetrics_webhook; echo
+		touch $lock
 
 		unset sensor value lock text
 	done

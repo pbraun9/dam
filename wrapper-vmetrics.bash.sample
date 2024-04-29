@@ -3,7 +3,14 @@
 date --rfc-email
 cd /data/dam/
 
-./vmetrics-max-value.ksh vmetrics-conftype/config.conf
+./vmetrics-gauge.ksh vmetrics-gauge/cpu.conf
+./vmetrics-gauge.ksh vmetrics-gauge/ram.conf
+./vmetrics-gauge.ksh vmetrics-gauge/disk-read.conf
+./vmetrics-gauge.ksh vmetrics-gauge/disk-write.conf
+./vmetrics-gauge.ksh vmetrics-gauge/tx-bytes.conf
+./vmetrics-gauge.ksh vmetrics-gauge/tx-pkts.conf
+./vmetrics-gauge.ksh vmetrics-gauge/rx-bytes.conf
+./vmetrics-gauge.ksh vmetrics-gauge/rx-pkts.conf
 
 echo
 
