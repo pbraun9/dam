@@ -19,8 +19,8 @@
             ]
         }
     },
-    "aggregations": {
-        "count": {
+    "aggs": {
+        "terms": {
             "terms": {
                 "field": "status",
                 "size": 3,

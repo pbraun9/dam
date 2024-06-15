@@ -8,10 +8,7 @@ query_nok='status:* AND !status:[200 TO 304]'
 remote_addr_field=remote_addr
 vhost_field=vhost
 
-score_trigger=10
+score_trigger=900
 
-ref_delay=1w
-ref_percent=1.00
-
-overall_fib=1.236
+overall_fib=5.000
 

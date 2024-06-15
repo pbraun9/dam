@@ -11,13 +11,9 @@ remote_addr_field=remote_addr
 vhost_field=vhost
 
 # scoring level trigger at which we send alerts
-score_trigger=10
-
-# reference to be obtained with the -prep script
-ref_delay=1w
-ref_percent=5.00
+score_trigger=900
 
 # trigger level above reference for overall traffic
 # 1.236 1.382 1.500 1.618 1.786 2.000
-overall_fib=1.786
+overall_fib=5.000
 
