@@ -2,10 +2,10 @@
 set -e
 
 # load credentials and endpoint
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 function create-detector {
-	cat <<EOF | tee /data/dam/traces/detector.create.$detector.request.json | \
+	cat <<EOF | tee /tmp/dam.$detector.request.json | \
 	curl -sk "$endpoint/_plugins/_anomaly_detection/detectors" \
 	-u $user:$passwd \
 	-X POST -H "Content-Type: application/json" -d@-

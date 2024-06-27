@@ -8,7 +8,7 @@ conf=$1
 confshort=${conf##*/}
 confshort=${confshort%\.conf}
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 [[ -z $vmetrics_webhook ]] && echo ERROR \$vmetrics_webhook not defined && exit 1
 [[ -z $vmetrics_endpoint ]] && echo ERROR \$vmetrics_endpoint not defined && exit 1
@@ -23,7 +23,7 @@ source $conf
 day=`date +%Y-%m-%d`
 
 curl -s "$vmetrics_endpoint" -d "query=$query" | \
-	tee /data/dam/traces/$confshort.json | \
+	tee /tmp/dam.$confshort.json | \
 	jq -r '.data.result[] | .metric.sensor + "," + .value[1]' | \
 	while read line; do
 		typeset -F 2 value

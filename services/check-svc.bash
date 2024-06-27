@@ -14,7 +14,7 @@ host=$1
 svc=$2
 many=$3
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 function check_pid {
 	# works against suricata and websocat

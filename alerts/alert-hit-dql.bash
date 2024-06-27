@@ -35,11 +35,12 @@ alert_conf=$1
 alert=${alert_conf%\.conf}
 alert=${alert#*/}
 
-[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
-source /data/dam/dam.conf
-
 [[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
 source /data/dam/$alert_conf
+
+# eventually override dummy=1
+[[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
+source /etc/dam/dam.conf
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock
@@ -50,7 +51,7 @@ lock=/var/lock/$alert.$day.lock
 # e.g. source.ip:x.x.x.x/x becomes "source.ip": "x.x.x.x/x"
 match_query=`echo $query | sed -r 's/^([^:]+):([^:]+)$/"\1": "\2"/'`
 
-result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
+result=`cat <<EOF | tee /tmp/dam.$alert.request.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
     "size": 100,
@@ -89,7 +90,7 @@ EOF`
 
 # keep last trace for parsing manually and enhancing the requests
 # no log rotation required, override every time
-echo "$result" > /data/dam/traces/result.$alert.json
+echo "$result" > /tmp/dam.$alert.result.json
 
 hits=`echo "$result" | jq -r ".hits.total.value"`
 

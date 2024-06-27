@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 curl -sk "$endpoint/_cat/indices?h=index,creation.date,docs.count,health&format=json&pretty" -u $user:$passwd \
 	| jq -r '.[] | .index + "," + ."docs.count"' | grep ',0$' | sed 's/,0$//'

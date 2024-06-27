@@ -5,7 +5,7 @@ set -e
 index=$1
 file=$2
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 [[ ! -r $file ]] && echo cannot read file $file && exit 1
 

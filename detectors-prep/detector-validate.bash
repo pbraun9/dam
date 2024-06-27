@@ -2,13 +2,13 @@
 set -e
 
 # load credentials and endpoint
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 function validate_detector {
 	[[ -z $1 ]] && echo function validate_detector needs url && exit 1
 	url=$1
 
-	cat <<EOF | tee /data/dam/traces/detector.validate.$detector.request.json | \
+	cat <<EOF | tee /tmp/dam.$detector.request.json | \
 	curl -sk "$url" -u $user:$passwd \
 	-X POST -H "Content-Type: application/json" -d@-
 {

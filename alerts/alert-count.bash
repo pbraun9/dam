@@ -33,18 +33,19 @@ alert_conf=$1
 alert=${alert_conf%\.conf}
 alert=${alert##*/}
 
-[[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
-source /etc/dam/dam.conf
-
 [[ ! -r $alert_conf ]] && echo cannot read $alert_conf && exit 1
 source $alert_conf
+
+# eventually override dummy=1
+[[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
+source /etc/dam/dam.conf
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | tee /tmp/dam.request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
+result=`cat <<EOF | tee /tmp/dam.$alert.request.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
     "size": 0,
@@ -84,7 +85,7 @@ EOF`
 
 # keep last trace for parsing manually and enhancing the requests
 # no log rotation required, override every time
-echo "$result" > /data/dam/traces/result.$alert.json
+echo "$result" > /tmp/dam.$alert.result.json
 
 # only get the most encountered field content (order desc): [0] instead of []
 doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`

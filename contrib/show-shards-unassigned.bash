@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 echo
 echo UNASSIGNED SHARDS

@@ -18,7 +18,7 @@ query=$2
 delay=$3
 field=$4
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 (( debug > 0 )) && echo index is $index
 (( debug > 0 )) && echo query is $query

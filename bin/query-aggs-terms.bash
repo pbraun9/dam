@@ -22,7 +22,7 @@ size=$5
 
 fieldshort=${field%\.keyword}
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 (( debug > 1 )) && echo index is $index
 (( debug > 1 )) && echo query is $query

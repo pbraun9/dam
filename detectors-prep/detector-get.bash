@@ -5,9 +5,9 @@ name=$1
 id=$2
 
 # load credentials and endpoint
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
-curl -sk "$endpoint/_plugins/_anomaly_detection/detectors/$id?pretty" -u $user:$passwd | tee /data/dam/traces/detector-get.$name.json
+curl -sk "$endpoint/_plugins/_anomaly_detection/detectors/$id?pretty" -u $user:$passwd | tee /tmp/dam.$name.json
 
 	# &task=true
 

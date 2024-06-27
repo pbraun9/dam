@@ -4,7 +4,7 @@ set -e
 [[ -z $1 ]] && echo ${0##*/} index/stream && exit 1
 index=$1
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 echo
 echo MAPPINGS

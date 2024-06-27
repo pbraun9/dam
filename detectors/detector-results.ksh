@@ -24,7 +24,7 @@ delay_minutes=6
 #
 
 function search_results {
-	cat <<EOF | tee /data/dam/traces/detector-results-$detector.request.json | curl -sk \
+	cat <<EOF | tee /tmp/dam.$detector.request.json | curl -sk \
 		"$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" \
 		-u $user:$passwd \
 		-X POST -H "Content-Type: application/json" -d@-
@@ -79,12 +79,12 @@ custom_index=$3
 [[ -z $custom_index ]] && echo need to define custom_index && exit 1
 
 # load credentials and endpoint
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 
 echo -n "$detector - "
 results=`search_results`
 
-echo "$results" > /data/dam/traces/detector-results-$detector.result.json
+echo "$results" > /tmp/dam.$detector.result.json
 
 hits=`echo $results | jq -r '.hits.total.value'`
 

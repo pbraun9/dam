@@ -37,11 +37,10 @@ alert_conf=$1
 alert=${alert_conf%\.conf}
 alert=${alert##*/}
 
-# (per-alert debug mode if dummy=1)
 [[ ! -r $alert_conf ]] && echo cannot read $alert_conf && exit 1
 source $alert_conf
 
-# load after alert conf so that dummy= gets eventually overwritten (app debug mode)
+# eventually override dummy=1
 [[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
 source /etc/dam/dam.conf
 
@@ -52,7 +51,7 @@ lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | tee /tmp/dam.request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
+result=`cat <<EOF | tee /tmp/dam.$alert.request.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
     "size": 100,
@@ -84,7 +83,7 @@ EOF`
 
 # keep last trace for parsing manually and enhancing the requests
 # no log rotation required, override every time
-echo "$result" > /data/dam/traces/result.$alert.json
+echo "$result" > /tmp/dam.$alert.result.json
 
 hits=`echo "$result" | jq -r ".hits.total.value"`
 
