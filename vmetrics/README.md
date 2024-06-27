@@ -2,13 +2,9 @@
 
 ## setup
 
-	cd vmetrics-gauge/
-	cp -pi ... ...
-	vi ...
-	cd ../
+    cp -R conf/vmetrics/ /etc/dam/
 
-	cp -pi wrapper-vmetrics.bash.sample wrapper-vmetrics.bash
-	vi wrapper-vmetrics.bash
+	vi vmetrics/wrapper.bash
 
 ## enable
 
@@ -16,7 +12,7 @@
 crontab -e
 
 # Performance monitoring
-   * * * * * /data/dam/wrapper-vmetrics.bash >> /var/log/dam-vmetrics.log 2>&1
+   * * * * * /data/dam/vmetrics/wrapper.bash >> /var/log/dam-vmetrics.log 2>&1
 ```
 
 ## resources

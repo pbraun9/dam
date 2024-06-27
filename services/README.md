@@ -41,6 +41,6 @@ _assuming ssh client config is in place_
 crontab -e
 
 # Service alerts
- */5 * * * * /data/dam/wrapper-svc.bash >> /var/log/dam-svc.log 2>&1
+ */5 * * * * /data/dam/services/wrapper.bash >> /var/log/dam-services.log 2>&1
 ```
 

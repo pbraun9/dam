@@ -1,0 +1,14 @@
+#!/bin/bash
+
+[[ -z $1 ]] && echo delay? && exit 1
+delay=$1
+
+# log format generated within
+#echo `date --rfc-email` - $0
+
+cd /data/dam/web-attackers/
+
+./spot-brute-force.ksh conf.d/nginx-prod.conf $delay
+
+#echo
+

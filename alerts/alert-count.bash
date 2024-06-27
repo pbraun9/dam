@@ -3,29 +3,25 @@
 function prep_alert {
         # beware of escapes for "`"
         cat <<EOF
-$alert - $title - found $hits hits within last $delay_minutes minutes
+$alert - $title
 
 \`\`\`
 $index
-Lucene> $query
-EOF
-
-	# that is in regards to the first 100 hits
-	for show_field in $show_fields; do
-		echo $show_field
-		echo "$result" | jq -r ".hits.hits[]._source.$show_field" | sort -uV | sed 's/^/\t/'
-	done; unset show_field
-
-	# TODO show IPs when there is no src.name nor dest.name
-	# (this would require to fix the null answer from jq)
-
-	cat <<EOF
+aggs $count_field (desc)
+.aggregations.sig.buckets.0.doc_count > $count_trigger
 \`\`\`
 
+found $doc_count doc_count within last $delay_minutes minutes
+$saved_dashboard_url --> ${count_field%\.keyword}
 $saved_search_url
+
 EOF
-	[[ -n $details ]] && echo "$details"
+
+	# that is in regards to aggs size
+	# multi-words multi-cols and multi-line
 	cat <<EOF
+$keys
+
 (throttle for today $day)
 EOF
 }
@@ -35,31 +31,26 @@ EOF
 [[ -z $1 ]] && echo what alert.conf? && exit 1
 alert_conf=$1
 alert=${alert_conf%\.conf}
-alert=${alert#*/}
+alert=${alert##*/}
 
-[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
-source /data/dam/dam.conf
+[[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
+source /etc/dam/dam.conf
 
-[[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
-source /data/dam/$alert_conf
+[[ ! -r $alert_conf ]] && echo cannot read $alert_conf && exit 1
+source $alert_conf
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
+result=`cat <<EOF | tee /tmp/dam.request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
-    "size": 100,
+    "size": 0,
     "query": {
         "bool": {
             "filter": [
-                {
-                    "query_string": {
-                        "query": "$query"
-                    }
-                },
                 {
                     "range": {
                         "@timestamp": {
@@ -69,6 +60,19 @@ result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST 
                     }
                 }
             ]
+        }
+    },
+    "aggregations": {
+        "count": {
+            "terms": {
+                "field": "$count_field",
+                "size": 3,
+                "order": [
+                    {
+                        "_count": "desc"
+                    }
+                ]
+            }
         }
     }
 }
@@ -82,9 +86,13 @@ EOF`
 # no log rotation required, override every time
 echo "$result" > /data/dam/traces/result.$alert.json
 
-hits=`echo "$result" | jq -r ".hits.total.value"`
+# only get the most encountered field content (order desc): [0] instead of []
+doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
 
-(( hits < 1 )) && echo $alert - no hits - all good && exit 0
+(( doc_count < count_trigger )) && echo $alert - doc_count less than $count_trigger - all good && exit 0
+
+# get all encountered field contents (according to aggs size)
+keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostring) + \"\t\" + .key"`
 
 text=`prep_alert`
 

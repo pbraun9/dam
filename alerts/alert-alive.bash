@@ -30,18 +30,19 @@ alert_conf=${alert_conf_path##*/}
 alert=${alert_conf%\.conf}
 alert=${alert#*/}
 
-[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
-source /data/dam/dam.conf
-
 [[ ! -r $alert_conf_path ]] && echo cannot read $alert_conf_path && exit 1
 source $alert_conf_path
+
+# eventually override dummy=1
+[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
+source /data/dam/dam.conf
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | tee /data/dam/traces/request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
+result=`cat <<EOF | tee /tmp/dam.request.$alert.json | curl -sk -X POST -H "Content-Type: application/json" \
         "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
     "size": 1,

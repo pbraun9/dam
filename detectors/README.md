@@ -2,7 +2,7 @@
 
 ## descr
 
-the hard part was to create the detectors [through the api](prep-detectors/README)
+the hard part was to create the detectors [through the api](detectors-prep/README.md)
 
 	contrib/detector-list.bash
 
@@ -10,12 +10,14 @@ the hard part was to create the detectors [through the api](prep-detectors/READM
 
 you can now simply proceed with the wrapper
 
+    cd detectors/
+
 	vi detector-results.bash
 
 	# override to 1H for testing
 	delay_minutes=60
 
-	./wrapper-detectors.bash
+	./wrapper.bash
 
 ### enable
 
@@ -23,7 +25,7 @@ you can now simply proceed with the wrapper
 crontab -e
 
 # Anomaly detection
- */5 * * * * /data/dam/wrapper-detectors.bash >> /var/log/dam-detectors.log 2>&1
+ */5 * * * * /data/dam/detectors/wrapper.bash >> /var/log/dam-detectors.log 2>&1
 ```
 
 ## resources

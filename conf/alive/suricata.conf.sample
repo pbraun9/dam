@@ -1,5 +1,6 @@
 
 # according to the cron job
+# or eventually more if the stream is less frequent
 delay_minutes=15
 
 # first-line title for the alert

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo `date --rfc-email` - ${0##*/}
+
+# simple hits
+/data/dam/alerts/alert-hit.bash /etc/dam/hits/brutes-internal.conf
+/data/dam/alerts/alert-hit.bash /etc/dam/hits/cf-instant-logs-waf.conf
+/data/dam/alerts/alert-hit.bash /etc/dam/hits/peers-unknown-peer.conf
+/data/dam/alerts/alert-hit.bash /etc/dam/hits/suricata-src1024.conf
+/data/dam/alerts/alert-hit.bash /etc/dam/hits/suricata-tunnel-age.conf
+/data/dam/alerts/alert-hit.bash /etc/dam/hits/suricata-tunnel-bytes.conf
+/data/dam/alerts/alert-hit.bash /etc/dam/hits/suricata-tunnel-pkts.conf
+
+# aggs count
+/data/dam/alerts/alert-count.bash /etc/dam/aggs/suricata-count-sigs.conf
+
+# aggs query then count
+/data/dam/alerts/alert-query-count.bash /etc/dam/query-aggs/dev-ingress-auth-brute.conf
+
+# check that data-streams are alive
+for conf in /etc/dam/alive/*.conf; do
+        /data/dam/alerts/alert-alive.bash $conf
+done; unset conf
+
+echo
+

@@ -16,27 +16,25 @@ debug=0
 # - count http codes non-2xx per item
 # - report on non-2xx precent above score_trigger
 #
-# assuming conf relative path /data/dam/spot/
-#
 
 [[ -z $2 ]] && echo -e \\n \ usage: ${0##*/} conf.d/conf delay \\n && exit 1
-conf=/data/dam/spot/$1
+conf=$1
 delay=$2
 frame=${delay##*/}
 frame=`echo $frame | sed -r 's/^[[:digit:]]+//'`
 
 [[ ! -r /data/dam/damlib.ksh ]] && echo cannot read /data/dam/damlib.ksh && exit 1
-[[ ! -r /data/dam/dam.conf ]] && echo cannot read /data/dam/dam.conf && exit 1
+[[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
 [[ ! -r $conf ]] && echo cannot read $conf && exit 1
 
-source /data/dam/dam.conf
+source /etc/dam/dam.conf
 source /data/dam/damlib.ksh
 source $conf
 
-[[ -z $endpoint ]]	&& echo define endpoint in /data/dam/dam.conf && exit 1
-[[ -z $user ]]		&& echo define user in /data/dam/dam.conf && exit 1
-[[ -z $passwd ]]	&& echo define passwd in /data/dam/dam.conf && exit 1
-[[ -z $webhook ]]       && echo define webhook in /data/dam/dam.conf && exit 1
+[[ -z $endpoint ]]	&& echo define endpoint in /etc/dam/dam.conf && exit 1
+[[ -z $user ]]		&& echo define user in /etc/dam/dam.conf && exit 1
+[[ -z $passwd ]]	&& echo define passwd in /etc/dam/dam.conf && exit 1
+[[ -z $webhook ]]       && echo define webhook in /etc/dam/dam.conf && exit 1
 
 [[ -z $index ]]		&& echo define index in $conf && exit 1
 [[ -z $query_total ]]	&& echo define query_total in $conf && exit 1
@@ -205,18 +203,18 @@ function attack_score {
 		if [[ $item_type = vhost ]]; then
 			# TODO enable log-rotation or make this less of a dirty hack
 			# assuming a vhost would show up only once in a single env
-			ref_percent=`grep -E "^ $index 1w $item " /var/log/dam-spot-1w.log | tail -1 | \
+			ref_percent=`grep -E "^ $index 1w $item " /var/log/dam-web-attackers-1w.log | tail -1 | \
 				awk '{print $9}' | cut -f1 -d%`
 		else
 			# for both overall & IP
 			# TODO check vhost even when dealing with per IP
-			ref_percent=`grep -E "^ $index 1w overall " /var/log/dam-spot-1w.log | tail -1 | \
+			ref_percent=`grep -E "^ $index 1w overall " /var/log/dam-web-attackers-1w.log | tail -1 | \
 				awk '{print $9}' | cut -f1 -d%`
 		fi
 
 		# not knowing about a vhost can happen in case there's no 1w reference for it
 		[[ -z $ref_percent ]] && echo -n " WARN: new $item_type $item? -- using overall ref_percent " && \
-			ref_percent=`grep -E "^ $index 1w overall " /var/log/dam-spot-1w.log | tail -1 | \
+			ref_percent=`grep -E "^ $index 1w overall " /var/log/dam-web-attackers-1w.log | tail -1 | \
                                 awk '{print $9}' | cut -f1 -d%` \
 			&& echo $ref_percent
 

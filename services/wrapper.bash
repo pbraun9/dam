@@ -2,8 +2,11 @@
 
 debug=0
 
-echo `date --rfc-email` - ${0##*/}
-grep -vE '^#|^$' /data/dam/wrapper-svc.conf | while read line; do
+[[ ! -r /etc/dam/services/services.conf ]] && echo cannot read /etc/dam/services/services.conf && exit 1
+
+echo `date --rfc-email` - $0
+
+grep -vE '^#|^$' /etc/dam/services/services.conf | while read line; do
 	host=`echo $line | awk '{print $1}'`
 	svc=`echo $line | awk '{print $2}'`
 	many=`echo $line | awk '{print $3}'`
@@ -15,5 +18,6 @@ grep -vE '^#|^$' /data/dam/wrapper-svc.conf | while read line; do
 
 	unset host svc many
 done
+
 echo
 
