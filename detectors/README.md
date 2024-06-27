@@ -2,7 +2,7 @@
 
 ## descr
 
-the hard part was to create the detectors [through the api](detectors-prep/README.md)
+the hard part was to create the detectors [through the api](../detectors-prep/README.md)
 
 	contrib/detector-list.bash
 

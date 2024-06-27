@@ -2,7 +2,7 @@
 
 ## requirements
 
-- an elastic/opensearch cluster
+- an elk cluster (elasticsearch or opensearch)
 - some logs to be pushed over there
 - specific fields to be available for alert verbosity e.g. `sensor`, `source.geo.name` and `destination.geo.name`
 
@@ -23,7 +23,7 @@
 
 ## setup
 
-[elastic/opensearch alerts](alerts/README.md)
+[elk alerts](alerts/README.md)
 
 [anomaly detection](detectors/README.md)
 

@@ -14,7 +14,7 @@ grep -vE '^#|^$' /etc/dam/services/services.conf | while read line; do
 	(( debug > 0 )) && echo host $host / svc $svc / many $many
 
 	echo -n checking service $many $svc on $host ...
-	/data/dam/check-svc.bash $host $svc $many && echo OK
+	/data/dam/services/check-svc.bash $host $svc $many && echo OK
 
 	unset host svc many
 done
