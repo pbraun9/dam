@@ -43,7 +43,9 @@ now you know what to expect in terms of failed http requests
 
 ```
 # Track relative amount of non-2xx http status codes
- 20 04 * * * /data/dam/web-attackers/wrapper.bash 1w    >> /var/log/dam-web-attackers-1w.log 2>&1
+ 20 06 * * 1 /data/dam/web-attackers/wrapper.bash 1w    >> /var/log/dam-web-attackers-1w.log 2>&1
+ 02 06 * * * /data/dam/web-attackers/wrapper.bash 1d    >> /var/log/dam-web-attackers-1d.log 2>&1
+02 */4 * * * /data/dam/web-attackers/wrapper.bash 4h    >> /var/log/dam-web-attackers-4h.log 2>&1
   02 * * * * /data/dam/web-attackers/wrapper.bash 1h    >> /var/log/dam-web-attackers-1h.log 2>&1
  */3 * * * * /data/dam/web-attackers/wrapper.bash 3m    >> /var/log/dam-web-attackers-3m.log 2>&1
 ```

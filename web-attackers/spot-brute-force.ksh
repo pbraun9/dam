@@ -8,7 +8,7 @@ debug=0
 # overall
 # - count overall http codes 2xx
 # - count overall http codes non-2xx
-# - report on non-2xx precent above overall_fib
+# - report on non-2xx precent above bad_percent
 #
 # per vhost & client
 # - search for currently active item
@@ -41,8 +41,8 @@ source $conf
 [[ -z $query_nok ]]	&& echo define query_nok in $conf && exit 1
 [[ -z $remote_addr_field ]] && echo define remote_addr_field in $conf && exit 1
 [[ -z $vhost_field ]]	&& echo define vhost_field in $conf && exit 1
+[[ -z $bad_percent ]]   && echo define bad_percent in $conf && exit 1
 [[ -z $score_trigger ]]	&& echo define score_trigger in $conf && exit 1
-[[ -z $overall_fib ]]   && echo define overall_fib in $conf && exit 1
 
 [[ ! -x `whence jq` ]]	&& echo install jq first && exit 1
 [[ ! -x `whence host` ]] && echo install host command first && exit 1
@@ -66,9 +66,9 @@ function count_overall {
 function count_per_vhost {
 	[[ -z $vhost ]] && echo function $0 needs vhost && exit 1
 
-        typeset -g total=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
-                "$endpoint/$index/_count?pretty" -u $user:$passwd \
-                -d @- | jq -r .count
+        typeset -g total=`cat <<EOF | tee /tmp/dam.web-attackers.vhost.total.request.json | \
+		curl -sk -X POST -H "Content-Type: application/json" "$endpoint/$index/_count?pretty" -u $user:$passwd -d @- | \
+		tee /tmp/dam.web-attackers.vhost.total.result.json | jq -r .count
 {
     "query": {
         "bool": {
@@ -94,9 +94,9 @@ EOF`
 
 	(( debug > 1 )) && echo debug: $vhost - total $total
 
-	typeset -g nok=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
-		"$endpoint/$index/_count?pretty" -u $user:$passwd \
-		-d @- | jq -r .count
+	typeset -g nok=`cat <<EOF | tee /tmp/dam.web-attackers.vhost.nok.request.json | \
+		curl -sk -X POST -H "Content-Type: application/json" "$endpoint/$index/_count?pretty" -u $user:$passwd -d @- | \
+		tee /tmp/dam.web-attackers.vhost.nok.result.json | jq -r .count
 {
     "query": {
         "bool": {
@@ -128,9 +128,9 @@ EOF`
 function count_per_ip {
 	[[ -z $ip ]] && echo function $0 needs ip && exit 1
 
-	typeset -g total=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
-		"$endpoint/$index/_count?pretty" -u $user:$passwd \
-		-d @- | jq -r .count
+	typeset -g total=`cat <<EOF | tee /tmp/dam.web-attackers.ip.total.request.json | \
+		curl -sk -X POST -H "Content-Type: application/json" "$endpoint/$index/_count?pretty" -u $user:$passwd -d @- | \
+		tee /tmp/dam.web-attackers.ip.total.result.json | jq -r .count
 {
     "query": {
         "bool": {
@@ -199,75 +199,40 @@ function attack_score {
 	[[ -z $nok ]] && echo function $0 needs nok && exit 1
 	[[ -z $overall_total ]] && echo function $0 needs overall_total && exit 1
 
-	if [[ ! $delay = 1w ]]; then
-		if [[ $item_type = vhost ]]; then
-			# TODO enable log-rotation or make this less of a dirty hack
-			# assuming a vhost would show up only once in a single env
-			ref_percent=`grep -E "^ $index 1w $item " /var/log/dam-web-attackers-1w.log | tail -1 | \
-				awk '{print $9}' | cut -f1 -d%`
-		else
-			# for both overall & IP
-			# TODO check vhost even when dealing with per IP
-			ref_percent=`grep -E "^ $index 1w overall " /var/log/dam-web-attackers-1w.log | tail -1 | \
-				awk '{print $9}' | cut -f1 -d%`
-		fi
-
-		# not knowing about a vhost can happen in case there's no 1w reference for it
-		[[ -z $ref_percent ]] && echo -n " WARN: new $item_type $item? -- using overall ref_percent " && \
-			ref_percent=`grep -E "^ $index 1w overall " /var/log/dam-web-attackers-1w.log | tail -1 | \
-                                awk '{print $9}' | cut -f1 -d%` \
-			&& echo $ref_percent
-
-		(( debug > 1 )) && echo debug: $item - ref_percent $ref_percent
-		(( ref_percent >= 0 )) || bomb ref_percent $ref_percent not a number for $item_type $item?
-	fi
-
 	# overall_total total nok remain integers
-	# ref_percent remains float
 
 	# avoid integer division with 1. float
 	typeset -F 2 percent
 	(( percent = nok * 1. / total * 100 ))
 	(( debug > 1 )) && echo "debug: $item - (( $percent = $nok * 1. / $total * 100 ))"
 
-	# fib levels are only valuable against the weekly reference
-	if [[ ! $delay = 1w ]]; then
-		typeset -F 3 result_fib
-		(( result_fib = percent / ref_percent ))
-		(( debug > 1 )) && echo "debug: $item - (( $result_fib = $percent / $ref_percent ))"
-	else
-		typeset -F 3 result_fib
-		result_fib=1.000
-	fi
-
-	if [[ item_type = overall ]]; then
-		item_ratio=100
+	if [[ $item_type = overall ]]; then
+		item_ratio=$index
 	else
 		typeset -F2 item_ratio
 		(( item_ratio = total * 100.00 / overall_total ))
 		(( debug > 1 )) && echo "debug: (( $item_ratio = $total * 100 / $overall_total ))"
 	fi
 
-	# $ref_percent $overall_fib
-	if [[ ! $delay = 1w ]]; then
-		text="$index $delay $item ($item_ratio%) - nok http status $percent% out of $total entries as fib $result_fib compared to $ref_percent%"
-	else
-		text="$index $delay $item ($item_ratio%) - nok http status $percent% out of $total entries"
-	fi
+	text="$index $delay $item ($item_ratio% $item_type) - nok http status $percent% out of $total entries"
 
 	echo \ $text
 
-	if [[ $item_type = vhost && $result_fib -ge $overall_fib ]]; then
+	# no need to calculate hits per second as this is not necessarilly a single attacker
+	if [[ $item_type = vhost && $percent -ge $bad_percent ]]; then
+
 		send_alarm "$text"
-	elif [[ $item_type = ip && $result_fib -gt 1.000 ]]; then
+
+	elif [[ $item_type = ip && $percent -ge $bad_percent ]]; then
+
 		hits_per_second
 
 		(( debug > 1 )) && echo debug: $item - hits $hits
 
 		typeset -F 2 score
-		(( score = hits * percent * result_fib ))
+		(( score = hits * percent ))
 
-		(( debug > 1 )) && echo "debug: $item - (( $score = $hits * $percent * $result_fib ))"
+		(( debug > 1 )) && echo "debug: $item - (( $score = $hits * $percent ))"
 
 		# we do not take item_ratio into consideration for scoring
 		# what ever the load an attacker produces can be hidden by heavy-duty upstream
@@ -280,14 +245,14 @@ $hits hits per second / score $score / \`$ptr\`"
 
 			unset ptr
 		else
-			echo \ $index $delay info: score $score below score_trigger $score_trigger
+			echo " info: score $score ($percent x $hits hits per second) below score_trigger $score_trigger"
 		fi
 
 	fi
 
+	# bonus warning - may become yet another alert
 	if [[ $item_type = ip ]]; then
-		(( hits >= 1.00 )) && echo \ $index $delay WARN: $hits hits per second reached 1.00
-		#(( item_ratio > 0.20 )) && echo \ $index $delay WARN: item_ratio $item_ratio is above 20%
+		(( hits >= 100 )) && echo \ $index $delay WARN: $hits hits per second reached 100
 	fi
 
 	return 0
@@ -302,11 +267,9 @@ function send_alarm {
 	day=`date +%Y-%m-%d`
 	alert=$index-$delay-$item
 	lock=/var/lock/$alert.$day.lock
-	#(( debug > 0 )) && echo debug: lock $lock
-	echo DEBUG lock is $lock
 
 	# exit function, not program
-	[[ -f $lock ]] && echo \ $index $delay info: $alert - there is a lock already for today \($lock\) && return
+	[[ -f $lock ]] && echo " info: there is a lock already for today ($lock)" && return
 
 	text="$1
 (throttle for today $day)"
@@ -317,6 +280,7 @@ function send_alarm {
 		echo -n \ sending webhook to slack ...
 		curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook && echo
 		touch $lock
+		(( debug > 0 )) && echo debug: wrote lock $lock
 	fi
 
 	unset day alert lock
@@ -343,13 +307,12 @@ unset item total nok
 # per vhost
 #
 
-# we want all unique field values - terms is appropriate
+# we want all unique field values - terms/keyword is appropriate
 ## assuming less than 100 vhosts
 # grab 10 most active vhosts
-# field type STRING ==> keyword
-vhosts=`cat <<EOF | curl -sk -X POST -H "Content-Type: application/json" \
-        "$endpoint/$index/_search?pretty" -u $user:$passwd \
-        -d @- | jq -r ".aggregations.terms_$vhost_field.buckets[].key"
+vhosts=`cat <<EOF | tee /tmp/dam.web-attackers.vhosts.request.json | \
+	curl -sk -X POST -H "Content-Type: application/json" "$endpoint/$index/_search?pretty" -u $user:$passwd -d @- | \
+	tee /tmp/dam.web-attackers.vhosts.result.json | jq -r ".aggregations.terms_$vhost_field.buckets[].key"
 {
     "size": 0,
     "query": {
@@ -406,20 +369,22 @@ done; unset vhost
 # per client
 #
 
-# same here, unique field values
-## assuming less than 1,000 IPs (time-frame short enough)
-# grab only 10 most active IPs
+# HOTFIX - sometimes the field we are targetting (as defined with remote_addr_field variable)
+# is not yet of the right field type (ip).  workaround is to define "field_type" in the web-attackers config.
 # field type IP ==> no keyword
-# HOTFIX
-if [[ -n `echo $index | grep cloudflare` ]]; then
+# other field types (string) ==> keyword
+if [[ $field_type = string ]]; then
 	fix=$remote_addr_field.keyword
 else
 	fix=$remote_addr_field
 fi
 
-ips=`cat <<EOF | tee /var/tmp/debug.json | curl -sk -X POST -H "Content-Type: application/json" \
-        "$endpoint/$index/_search?pretty" -u $user:$passwd \
-        -d @- | tee /var/tmp/debug-results.json | jq -r ".aggregations.\"terms_$remote_addr_field\".buckets[].key"
+# we want all unique field values - terms/ip is appropriate
+## assuming less than 1,000 IPs (time-frame short enough)
+# grab only 10 most active IPs
+ips=`cat <<EOF | tee /tmp/dam.web-attackers.ips.request.json | \
+	curl -sk -X POST -H "Content-Type: application/json" "$endpoint/$index/_search?pretty" -u $user:$passwd -d @- | \
+	tee /tmp/dam.web-attackers.ips.results.json | jq -r ".aggregations.\"terms_$remote_addr_field\".buckets[].key"
 {
     "size": 0,
     "query": {
