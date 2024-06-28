@@ -12,7 +12,7 @@ function check_var {
 	unset tmp
 }
 
-# defines hits
+# defines hits globally
 hits_per_second() {
 	[[ -z $delay ]] && bomb $0 misses delay
 	[[ -z $frame ]] && bomb $0 misses frame

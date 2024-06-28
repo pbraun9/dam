@@ -8,7 +8,11 @@ delay=$1
 
 cd /data/dam/web-attackers/
 
-./spot-brute-force.ksh conf.d/nginx-prod.conf $delay
+for conf in /etc/dam/web-attackers/*.conf; do
+
+	./spot-brute-force.ksh $conf $delay
+
+done; unset conf
 
 #echo
 

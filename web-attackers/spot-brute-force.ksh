@@ -218,41 +218,55 @@ function attack_score {
 
 	echo \ $text
 
-	# no need to calculate hits per second as this is not necessarilly a single attacker
-	if [[ $item_type = vhost && $percent -ge $bad_percent ]]; then
+	if (( percent >= bad_percent )); then
 
-		send_alarm "$text"
+	## no need to calculate hits per second as this is not necessarilly a single attacker
+	# attempt to use hits per seconds for vhosts also -- log rejections for now
+		if [[ $item_type = overall ]]; then
 
-	elif [[ $item_type = ip && $percent -ge $bad_percent ]]; then
+			send_alarm "$text"
 
-		hits_per_second
-
-		(( debug > 1 )) && echo debug: $item - hits $hits
-
-		typeset -F 2 score
-		(( score = hits * percent ))
-
-		(( debug > 1 )) && echo "debug: $item - (( $score = $hits * $percent ))"
-
-		# we do not take item_ratio into consideration for scoring
-		# what ever the load an attacker produces can be hidden by heavy-duty upstream
-		# however we report on abnormal IP ratio thereafter
-		if (( score > score_trigger )); then
-			ptr=`host $item | awk '{print $NF}'`
-
-			send_alarm "$text
-$hits hits per second / score $score / \`$ptr\`"
-
-			unset ptr
 		else
-			echo " info: score $score ($percent x $hits hits per second) below score_trigger $score_trigger"
-		fi
 
+			hits_per_second
+
+			(( debug > 1 )) && echo debug: $item - hits $hits
+
+			typeset -F 2 score
+			(( score = hits * percent ))
+
+			(( debug > 1 )) && echo "debug: $item - (( $score = $hits * $percent ))"
+
+			# we do not take item_ratio into consideration for scoring
+			# what ever the load an attacker produces can be hidden by heavy-duty upstream
+			# however we report on abnormal IP ratio thereafter
+			if (( score >= score_trigger )) && [[ $item_type = ip ]]; then
+
+				ptr=`host $item | awk '{print $NF}'`
+
+				send_alarm "$text
+				$hits hits per second / score $score / \`$ptr\`"
+
+				unset ptr
+
+			elif (( score >= score_trigger )) && [[ $item_type = vhost ]]; then
+
+				send_alarm "$text
+				$hits hits per second / score $score"
+
+			elif (( score < score_trigger )) && [[ $item_type = vhost ]]; then
+
+				# not sure we should use hits per second for vhosts
+				echo " info: score $score ($percent x $hits hits per second) below score_trigger $score_trigger"
+
+			fi
+
+		fi
 	fi
 
 	# bonus warning - may become yet another alert
 	if [[ $item_type = ip ]]; then
-		(( hits >= 100 )) && echo \ $index $delay WARN: $hits hits per second reached 100
+		(( hits >= 100 )) && echo \ WARN PREVIEW: $hits hits per second reached 100
 	fi
 
 	return 0
@@ -374,6 +388,7 @@ done; unset vhost
 # field type IP ==> no keyword
 # other field types (string) ==> keyword
 if [[ $field_type = string ]]; then
+	echo " warn: field_type is $field_type"
 	fix=$remote_addr_field.keyword
 else
 	fix=$remote_addr_field
