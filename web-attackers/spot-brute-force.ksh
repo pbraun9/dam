@@ -207,7 +207,8 @@ function attack_score {
 	(( debug > 1 )) && echo "debug: $item - (( $percent = $nok * 1. / $total * 100 ))"
 
 	if [[ $item_type = overall ]]; then
-		item_ratio=$index
+		# although unnecessary, we should keep a number here to avoid getting rid of the % sign further below
+		item_ratio=100
 	else
 		typeset -F2 item_ratio
 		(( item_ratio = total * 100.00 / overall_total ))
@@ -244,15 +245,14 @@ function attack_score {
 
 				ptr=`host $item | awk '{print $NF}'`
 
-				send_alarm "$text
-				$hits hits per second / score $score / \`$ptr\`"
+				# there may be multiple entries for a PTR, hence the echo within the markdown code
+				send_alarm "$text / $hits hits per second / score $score / \``echo $ptr`\`"
 
 				unset ptr
 
 			elif (( score >= score_trigger )) && [[ $item_type = vhost ]]; then
 
-				send_alarm "$text
-				$hits hits per second / score $score"
+				send_alarm "$text / $hits hits per second / score $score"
 
 			elif (( score < score_trigger )) && [[ $item_type = vhost ]]; then
 
@@ -285,8 +285,7 @@ function send_alarm {
 	# exit function, not program
 	[[ -f $lock ]] && echo " info: there is a lock already for today ($lock)" && return
 
-	text="$1
-(throttle for today $day)"
+	text="$1 (throttle for today $day)"
 
 	(( debug > 0 )) && echo " ALARM"
 
@@ -383,6 +382,7 @@ done; unset vhost
 # per client
 #
 
+# jq: error (at <stdin>:34): Cannot iterate over null (null)
 # HOTFIX - sometimes the field we are targetting (as defined with remote_addr_field variable)
 # is not yet of the right field type (ip).  workaround is to define "field_type" in the web-attackers config.
 # field type IP ==> no keyword

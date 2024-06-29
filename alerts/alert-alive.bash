@@ -6,20 +6,13 @@ function prep_alert {
         # beware of escapes for "`"
         cat <<EOF
 $alert - $title
-
 \`\`\`
 $index
 \`\`\`
-
 $saved_search_url
 EOF
 	[[ -n $details ]] && echo "$details"
-	echo
-
-	cat <<EOF
-
-(throttle for today $day)
-EOF
+	echo "(throttle for today $day)"
 }
 
 [[ ! -x `which jq` ]] && echo install jq first && exit 1

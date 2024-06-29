@@ -2,9 +2,14 @@
 
 ## setup
 
-    cp -R conf/vmetrics/ /etc/dam/
+eventually install `sysstat` and then [parse its output](https://pub.nethence.com/monitoring/flb-vmetrics) with fluent-bit
+-- that way you get all rates in percent which makes it easier for alerting.
 
-	vi vmetrics/wrapper.bash
+    which sar
+
+    ls -lF /etc/fluent-bit/flb_metrics.conf
+
+    cp -R conf/vmetrics/ /etc/dam/
 
 ## enable
 
