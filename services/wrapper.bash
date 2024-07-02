@@ -1,9 +1,5 @@
 #!/bin/bash
 
-debug=0
-
-[[ ! -r /etc/dam/services/services.conf ]] && echo cannot read /etc/dam/services/services.conf && exit 1
-
 echo `date --rfc-email` - $0
 
 grep -vE '^#|^$' /etc/dam/services/services.conf | while read line; do
@@ -13,7 +9,7 @@ grep -vE '^#|^$' /etc/dam/services/services.conf | while read line; do
 
 	(( debug > 0 )) && echo host $host / svc $svc / many $many
 
-	echo -n checking service $many $svc on $host ...
+	echo -n \ checking service $many $svc on $host ...
 	/data/dam/services/check-svc.bash $host $svc $many && echo OK
 
 	unset host svc many

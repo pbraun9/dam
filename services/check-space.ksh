@@ -8,12 +8,14 @@ trigger=$2
 
 source /etc/dam/dam.conf
 
+[[ ! -r /etc/dam/services/space.conf ]] && echo \ error: cannot read /etc/dam/services/space.conf && exit 1
+
 function check_space {
-	[[ -z $spaces ]] && echo \ ERROR: could not find any mount point on $host && exit 1
+	[[ -z $spaces ]] && echo \ error: could not find any mount point on $host && exit 1
 	for space in $spaces; do
 		text="running out of space on $host: some moint point is at $space%"
 		(( space >= trigger )) && echo \ $text && send_webhook "$text" \
-			|| echo " $host (localhost) is fine: some moint point is at $space%"
+			|| echo " $host is fine: some moint point is at $space%"
 		unset text
 	done; unset space
 }
@@ -23,17 +25,17 @@ function send_webhook {
 
 	echo "$text"
 
-        echo -n sending webhook to slack ...
+        echo -n \ sending webhook to slack ...
         curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $svc_webhook; echo
 
-	echo -n enabling 1 hour lock \($lock\) ...
+	echo -n \ enabling 1 hour lock \($lock\) ...
 	touch $lock && echo done
 
         exit 1
 }
 
-[[ ! -x `which wc` ]] && echo cannot find wc executable && exit 1
-[[ ! -x `which ssh-ping` ]] && echo cannot find ssh-ping executable && exit 1
+[[ ! -x `which wc` ]] && echo \ error: cannot find wc executable && exit 1
+[[ ! -x `which ssh-ping` ]] && echo \ error: cannot find ssh-ping executable && exit 1
 
 hour=`date +%Y-%m-%d-%H:00`
 lock=/var/lock/$host-space.$hour.lock
@@ -52,7 +54,7 @@ fi
 
 ssh-ping -W1 -c1 $host </dev/null >/dev/null && host_alive=1 || host_alive=0
 
-(( host_alive == 0 )) && echo send_webhook "cannot check disk space on $host (ssh service not reachable)"
+(( host_alive == 0 )) && send_webhook "cannot check disk space on $host (ssh service not reachable)"
 
 spaces=`ssh -n $host df -P | grep ^/dev/ | awk '{print $5}' | sed 's/%//'`
 check_space

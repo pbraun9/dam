@@ -42,5 +42,6 @@ crontab -e
 
 # Service alerts
  */5 * * * * /data/dam/services/wrapper.bash >> /var/log/dam-services.log 2>&1
+  43 * * * * /data/dam/services/wrapper-space.bash >> /var/log/dam-services.log 2>&1
 ```
 

@@ -16,6 +16,8 @@ many=$3
 
 source /etc/dam/dam.conf
 
+[[ ! -r /etc/dam/services/services.conf ]] && echo cannot read /etc/dam/services/services.conf && exit 1
+
 function check_pid {
 	# works against suricata and websocat
 	# multi-line required with multiple pids
@@ -30,17 +32,17 @@ function send_webhook {
 
 	echo "$text"
 
-        echo -n sending webhook to slack ...
+        echo -n \ sending webhook to slack ...
         curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $svc_webhook; echo
 
-	echo -n enabling 1 hour lock \($lock\) ...
+	echo -n \ enabling 1 hour lock \($lock\) ...
 	touch $lock && echo done
 
         exit 1
 }
 
-[[ ! -x `which wc` ]] && echo cannot find wc executable && exit 1
-[[ ! -x `which ssh-ping` ]] && echo cannot find ssh-ping executable && exit 1
+[[ ! -x `which wc` ]] && echo \ error: cannot find wc executable && exit 1
+[[ ! -x `which ssh-ping` ]] && echo \ error: cannot find ssh-ping executable && exit 1
 
 hour=`date +%Y-%m-%d-%H:00`
 lock=/var/lock/$host-$svc.$hour.lock
