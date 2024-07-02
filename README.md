@@ -1,10 +1,14 @@
 # diy alerts monitor
 
-## requirements
+## description
 
-- an elk cluster (elasticsearch or opensearch)
-- some logs to be pushed over there
-- specific fields to be available for alert verbosity e.g. `sensor`, `source.geo.name` and `destination.geo.name`
+DAM offers several components to check various kinds of alerts
+
+- hits and aggregates from log servers
+- performance triggers from metric servers
+- service and space checks through SSH
+
+you do not have to use them all: you can choose which component you want to use.
 
 ## install
 

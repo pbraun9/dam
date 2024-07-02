@@ -1,6 +1,12 @@
 # elk alerts
 
-# alerts setup
+## requirements
+
+- an elk cluster (elasticsearch or opensearch)
+- some logs to be pushed over there
+- specific fields to be available for alert verbosity e.g. `sensor`, `source.geo.name` and `destination.geo.name`
+
+## alerts setup
 
 elk search query alerts
 

@@ -20,8 +20,7 @@ debug=0
 [[ -z $2 ]] && echo -e \\n \ usage: ${0##*/} conf.d/conf delay \\n && exit 1
 conf=$1
 delay=$2
-frame=${delay##*/}
-frame=`echo $frame | sed -r 's/^[[:digit:]]+//'`
+frame=`echo $delay | sed -r 's/^[[:digit:]]+//'`
 
 [[ ! -r /data/dam/damlib.ksh ]] && echo cannot read /data/dam/damlib.ksh && exit 1
 [[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
@@ -392,6 +391,12 @@ if [[ $field_type = string ]]; then
 	fix=$remote_addr_field.keyword
 else
 	fix=$remote_addr_field
+fi
+
+# do not proceed with ip aggs for small time-frames, that's too noisy
+if [[ $frame = m ]]; then
+	minutes=`echo $delay | sed 's/m$//'`
+	(( minutes < 60 )) && echo && exit 0
 fi
 
 # we want all unique field values - terms/ip is appropriate

@@ -1,5 +1,11 @@
 # dam - spot the attacker
 
+## requirements
+
+- an elk cluster (elasticsearch or opensearch)
+- some logs to be pushed over there
+- specific fields to be available for alert verbosity e.g. `sensor`, `source.geo.name` and `destination.geo.name`
+
 ## goals
 
 - spot web path brute forces
