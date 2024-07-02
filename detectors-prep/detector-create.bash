@@ -4,6 +4,20 @@ set -e
 # load credentials and endpoint
 source /etc/dam/dam.conf
 
+[[ -z $1 ]] && echo detectors/config_file? && exit 1
+config_file=$1
+
+source $config_file
+
+[[ -z $detector ]] && echo could not define detector && exit 1
+[[ -z $descr ]]    && echo could not define descr && exit 1
+[[ -z $index ]]    && echo could not define index && exit 1
+[[ -z $aggs ]]     && echo could not define aggs && exit 1
+[[ -z $field ]]    && echo could not define field && exit 1
+[[ -z $suffix ]]   && echo could not define suffix && exit 1
+[[ -z $interval ]] && echo could not define interval && exit 1
+[[ -z $window_delay ]] && echo could not define window_delay && exit 1
+
 function create-detector {
 	cat <<EOF | tee /tmp/dam.$detector.request.json | \
 	curl -sk "$endpoint/_plugins/_anomaly_detection/detectors" \
@@ -31,13 +45,13 @@ function create-detector {
   ],
   "detection_interval": {
     "period": {
-      "interval": 5,
+      "interval": $interval,
       "unit": "Minutes"
     }
   },
   "window_delay": {
     "period": {
-      "interval": 1,
+      "interval": $window_delay,
       "unit": "Seconds"
     }
   },
@@ -45,18 +59,6 @@ function create-detector {
 }
 EOF
 }
-
-[[ -z $1 ]] && echo detectors/config_file? && exit 1
-config_file=$1
-
-source $config_file
-
-[[ -z $detector ]] && echo could not define detector && exit 1
-[[ -z $descr ]]    && echo could not define descr && exit 1
-[[ -z $index ]]    && echo could not define index && exit 1
-[[ -z $aggs ]]     && echo could not define aggs && exit 1
-[[ -z $field ]]    && echo could not define field && exit 1
-[[ -z $suffix ]]   && echo could not define suffix && exit 1
 
 echo
 echo CREATE DETECTOR FROM CONFIG $config_file

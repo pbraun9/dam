@@ -1,5 +1,6 @@
 # prepare anomaly detectors
 
+<!--
 ## from scratch
 
 first, create a sample detector from the UI
@@ -7,27 +8,39 @@ then eventually grab its config (helps to get the syntax right)
 
 list existing detectors with their respective ID
 
-	../list-detectors.bash
+	../detectors/list-detectors.bash
 
 and grab the sample config
 
-	./detector-get.bash DETECTOR-NAME DETECTOR-ID
+	./detector-get.bash DETECTOR-NAME DETECTOR-ID > DETECTOR-NAME-template.conf
+-->
 
-## generate new detectors
+## setup detectors
 
-you can now create a configs for the detectors you want to create
+define fields and values for the detectors you want to create
 
-	vi suri-max-flow-age.conf
+    ls -lF conf/detectors-prep/*
+
+    cd /etc/dam/detectors-prep/
+    vi cloudflare-TAG-min-waf.conf
+    vi falco-count-rule.conf
+    vi ...
+
+## generate detectors
 
 check the generated config syntax and against the data
 
-_beware we hard-coded 5 minutes interval with 1 minute window delay_
-
-	./detector-validate.bash suri-max-flow-age.conf
+    for f in /etc/dam/detectors-prep/*; do
+        ./detector-validate.bash $f
+    done; unset f
 
 create the validated detectors
 
-	./detector-create.bash suri-max-flow-age.conf
+    for f in /etc/dam/detectors-prep/*; do
+	    ./detector-create.bash $f
+    done; unset f
+
+## ready to go
 
 now go to the opensearch dashboard and enable those
 

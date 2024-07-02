@@ -6,6 +6,7 @@ dummy=0
 debug=0
 
 # according to cron job + 1 minute as a window delay
+# instead of throttling
 delay_minutes=6
 
 # override to 1H for testing
@@ -22,6 +23,18 @@ delay_minutes=6
 #
 # no lock required here
 #
+
+[[ -z $3 ]] && echo -e \\n usage: ${0##*/} detector-name detector-id custom_index \\n && exit 1
+detector=$1
+id=$2
+custom_index=$3
+
+[[ -z $detector ]] && echo need to define detector && exit 1
+[[ -z $id ]] && echo need to define id && exit 1
+[[ -z $custom_index ]] && echo need to define custom_index && exit 1
+
+# load credentials and endpoint
+source /etc/dam/dam.conf
 
 function search_results {
 	cat <<EOF | tee /tmp/dam.$detector.request.json | curl -sk \
@@ -49,7 +62,7 @@ function search_results {
           "range": {
             "approx_anomaly_start_time": {
               "from": "now-${delay_minutes}m/m",
-              "to": "now/m"
+              "to": "now"
             }
           }
         }
@@ -68,18 +81,6 @@ expected value was $expected but feature value was $feature
 (aggs $aggs field $field)
 EOF
 }
-
-[[ -z $3 ]] && echo -e \\n usage: ${0##*/} detector-name detector-id custom_index \\n && exit 1
-detector=$1
-id=$2
-custom_index=$3
-
-[[ -z $detector ]] && echo need to define detector && exit 1
-[[ -z $id ]] && echo need to define id && exit 1
-[[ -z $custom_index ]] && echo need to define custom_index && exit 1
-
-# load credentials and endpoint
-source /etc/dam/dam.conf
 
 echo -n "$detector - "
 results=`search_results`
