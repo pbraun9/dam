@@ -28,25 +28,29 @@ EOF
 
 [[ ! -x `which jq` ]] && echo install jq first && exit 1
 
-[[ -z $1 ]] && echo what alert.conf? && exit 1
+[[ ! -r /data/dam/lib/send_webhook_sev.bash ]] && echo cannot read /data/dam/lib/send_webhook_sev.bash && exit 1
+source /data/dam/lib/send_webhook_sev.bash
+
+[[ -z $1 ]] && echo usage: ${0##*/} alert.conf && exit 1
 alert_conf=$1
 alert=${alert_conf%\.conf}
-alert=${alert#*/}
+alert=${alert##*/}
 
-[[ ! -r /data/dam/$alert_conf ]] && echo cannot read /data/dam/$alert_conf && exit 1
-source /data/dam/$alert_conf
+[[ ! -r $alert_conf ]] && echo cannot read $alert_conf && exit 1
+source $alert_conf
 
-# eventually override dummy=1
+# load overall settings after conf - eventually override dummy=1
 [[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
 source /etc/dam/dam.conf
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock
 
-[[ -f $lock ]] && echo $alert - there is a lock already for today \($lock\) && exit 0
+[[ -f $lock ]] && echo \ $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | tee /tmp/dam.$alert.request.json | curl -sk -X POST -H "Content-Type: application/json" \
-        "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
+result=`cat <<EOF | tee /tmp/dam.alerts.$alert.request.json | \
+	curl -sk --fail -X POST -H "Content-Type: application/json" "$endpoint/$index/_search?pretty" -u $user:$passwd -d @- | \
+	tee /tmp/dam.alerts.$alert.result.json
 {
     "size": 0,
     "query": {
@@ -84,9 +88,9 @@ result=`cat <<EOF | tee /tmp/dam.$alert.request.json | curl -sk -X POST -H "Cont
 }
 EOF`
 
-(( $? > 0 )) && echo -e "$alert - error: request exited abormally:\n$result" && exit 1
+(( $? > 0 )) && echo " $alert - error: request exited abormally (see /tmp/dam.alerts.$alert.*.json)" && exit 1
 
-[[ -z $result ]] && echo $alert - error: result is empty && exit 1
+[[ -z $result ]] && echo \ $alert - error: result is empty && exit 1
 
 # keep last trace for parsing manually and enhancing the requests
 # no log rotation required, override every time
@@ -95,20 +99,12 @@ echo "$result" > /tmp/dam.$alert.result.json
 # only get the most encountered field content (order desc): [0] instead of []
 doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
 
-(( doc_count < count_trigger )) && echo $alert - doc_count less than $count_trigger - all good && exit 0
+(( doc_count < count_trigger )) && echo \ $alert - doc_count less than $count_trigger - all good && exit 0
 
 # get all encountered field contents (according to aggs size)
 keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostring) + \"\t\" + .key"`
 
 text=`prep_alert`
 
-if (( dummy == 1 )); then
-	echo the following would be sent to $webhook
-	echo "$text"
-else
-	echo -n $alert - sending webhook to slack ...
-	curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
-	touch $lock
-	exit 1
-fi
+send_webhook_sev
 

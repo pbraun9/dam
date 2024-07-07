@@ -25,15 +25,17 @@ frame=`echo $delay | sed -r 's/^[[:digit:]]+//'`
 [[ ! -r /data/dam/damlib.ksh ]] && echo cannot read /data/dam/damlib.ksh && exit 1
 [[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
 [[ ! -r $conf ]] && echo cannot read $conf && exit 1
+[[ ! -r /data/dam/lib/send_webhook_sev.bash ]] && echo cannot read /data/dam/lib/send_webhook_sev.bash && exit 1
 
 source /etc/dam/dam.conf
 source /data/dam/damlib.ksh
 source $conf
+source /data/dam/lib/send_webhook_sev.ksh
 
 [[ -z $endpoint ]]	&& echo define endpoint in /etc/dam/dam.conf && exit 1
 [[ -z $user ]]		&& echo define user in /etc/dam/dam.conf && exit 1
 [[ -z $passwd ]]	&& echo define passwd in /etc/dam/dam.conf && exit 1
-[[ -z $webhook ]]       && echo define webhook in /etc/dam/dam.conf && exit 1
+# webhook_$sev will be checked within send_webhook_sev function
 
 [[ -z $index ]]		&& echo define index in $conf && exit 1
 [[ -z $query_total ]]	&& echo define query_total in $conf && exit 1
@@ -42,6 +44,7 @@ source $conf
 [[ -z $vhost_field ]]	&& echo define vhost_field in $conf && exit 1
 [[ -z $bad_percent ]]   && echo define bad_percent in $conf && exit 1
 [[ -z $score_trigger ]]	&& echo define score_trigger in $conf && exit 1
+[[ -z $sev ]]		&& echo define sev in $conf && exit 1
 
 [[ ! -x `whence jq` ]]	&& echo install jq first && exit 1
 [[ ! -x `whence host` ]] && echo install host command first && exit 1
@@ -271,10 +274,11 @@ function attack_score {
 	return 0
 }
 
+# text= defined here so it can be passed to child function
 function send_alarm {
-	[[ -z $index ]]	&& bomb function $0 needs index
-	[[ -z $item ]]	&& bomb function $0 needs item
-	[[ -z $delay ]]	&& bomb function $0 needs delay
+	[[ -z $index ]]	&& echo function $0 needs index && exit 1
+	[[ -z $item ]]	&& echo function $0 needs item && exit 1
+	[[ -z $delay ]]	&& echo function $0 needs delay && exit 1
 
 	# here we keep reporting in the logs, only the alarm gets throttled
 	day=`date +%Y-%m-%d`
@@ -286,14 +290,7 @@ function send_alarm {
 
 	text="$1 (throttle for today $day)"
 
-	(( debug > 0 )) && echo " ALARM"
-
-	if (( debug < 1 )); then
-		echo -n \ sending webhook to slack ...
-		curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook && echo
-		touch $lock
-		(( debug > 0 )) && echo debug: wrote lock $lock
-	fi
+	send_webhook_sev
 
 	unset day alert lock
 }

@@ -8,21 +8,21 @@
 
 ## alerts setup
 
-elk search query alerts
+elk alive index alerts
 
-	cp -Ri conf/hits/ /etc/dam/
+    cp -Ri conf/alert-alive/ /etc/dam/
 
 elk count query alerts
 
-    cp -Ri conf/aggs/ /etc/dam/
+    cp -Ri conf/alert-aggs/ /etc/dam/
 
-elk search & count query alerts
+elk search query alerts
 
-    cp -Ri conf/query-aggs/ /etc/dam/
+	cp -Ri conf/alert-hits/ /etc/dam/
 
-elk alive index alerts
+elk search and count query alerts
 
-    cp -Ri conf/alive/ /etc/dam/
+    cp -Ri conf/alert-query-aggs/ /etc/dam/
 
 ## acceptance
 
@@ -30,22 +30,18 @@ elk alive index alerts
 
 	cd alerts/
 
-	./alert-hit.bash hits/suricata-src1024.conf
-	#/data/dam/alert-hit-dql.bash ...
-	#/data/dam/alert-count.bash ...
-	./alert-alive.bash /data/dam/alive/suricata.conf
+	./alert-alive.bash /etc/dam/alert-alive/suricata.conf
+	./alert-count.bash /etc/dam/alert-aggs/suricata-count-sigs.conf
+	./alert-hit.bash /etc/dam/alert-hits/brutes-internal.conf
+    ./alert-query-count.bash /etc/dam/alert-query-aggs/ingress-dev-access-auth.conf
 
-## wrapper setup
+## ready to go
 
-    cd alerts/
-    cp -i wrapper.bash.sample wrapper.bash
-    vi wrapper.bash
+check the wrapper works accordingly
 
-    ...
+    ./wrapper.bash
 
-    cd ../
-
-## enable
+and enable
 
 ```
 crontab -e

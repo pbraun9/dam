@@ -1,21 +1,22 @@
 # setting up anomaly detectors
 
-## descr
+## requirements
 
-the hard part was to create the detectors [through the api](../detectors-prep/README.md)
-
-	contrib/detector-list.bash
-
-### acceptance
-
-you can now simply proceed with the wrapper
+you need some anomaly detectors in place.  eventually create those [through the api](../detectors-prep/README.md)
 
     cd detectors/
 
+	./list-detectors.bash
+
+### acceptance
+
+make sure the aggs time-frame corresponds to the cron-job further below (+1 minute)
+
 	vi detector-results.bash
 
-	# override to 1H for testing
-	delay_minutes=60
+	delay_minutes=11
+
+check that the wrapper works alright
 
 	./wrapper.bash
 
@@ -25,7 +26,7 @@ you can now simply proceed with the wrapper
 crontab -e
 
 # Anomaly detection
- */5 * * * * /data/dam/detectors/wrapper.bash >> /var/log/dam-detectors.log 2>&1
+*/10 * * * * /data/dam/detectors/wrapper.bash >> /var/log/dam-detectors.log 2>&1
 ```
 
 ## resources
