@@ -1,0 +1,49 @@
+{
+  "name": "cloudflare-ZONETAG-status4xx",
+  "time_field": "@timestamp",
+  "indices": [
+    "cloudflare-ZONETAG"
+  ],
+  "filter_query" : {
+    "bool" : {
+      "filter" : [
+        {
+          "range" : {
+            "EdgeResponseStatus" : {
+              "from" : 400,
+              "to" : 500,
+              "include_lower" : true,
+              "include_upper" : false
+            }
+          }
+        }
+      ]
+    }
+  },
+  "feature_attributes": [
+    {
+      "feature_name": "count-status",
+      "feature_enabled": true,
+      "aggregation_query": {
+        "aggs0": {
+          "value_count": {
+            "field": "EdgeResponseStatus"
+          }
+        }
+      }
+    }
+  ],
+  "detection_interval": {
+    "period": {
+      "interval": 10,
+      "unit": "Minutes"
+    }
+  },
+  "window_delay": {
+    "period": {
+      "interval": 2,
+      "unit": "Minutes"
+    }
+  },
+  "result_index" : "opensearch-ad-plugin-result-anomalies"
+}

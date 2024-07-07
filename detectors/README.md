@@ -2,25 +2,34 @@
 
 ## requirements
 
-you need some anomaly detectors in place.  eventually create those [through the api](../detectors-prep/README.md)
+you need some anomaly detectors in place
+-- eventually create those [through the api](../detectors-prep/README.md)
 
-    cd detectors/
-
+    cd /data/dam/detectors/
 	./list-detectors.bash
 
-### acceptance
+## setup
 
-make sure the aggs time-frame corresponds to the cron-job further below (+1 minute)
+place the conf files accoriding to detector names e.g. start with those samples
 
+    cp -R ../conf/detectors/ /etc/dam/
+    cd /etc/dam/detectors/
+    ls -lhF
+
+make sure the aggs time-frame corresponds to the cron-job further below (+ 1 minute)
+
+    cd /data/dam/detectors/
 	vi detector-results.bash
 
 	delay_minutes=11
+
+## ready to go
 
 check that the wrapper works alright
 
 	./wrapper.bash
 
-### enable
+and enable
 
 ```
 crontab -e

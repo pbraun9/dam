@@ -21,7 +21,7 @@ function validate_detector {
 	[[ -z $1 ]] && echo function validate_detector needs url && exit 1
 	url=$1
 
-	cat <<EOF | tee /tmp/dam.$detector.request.json | \
+	cat <<EOF | tee /tmp/dam.detectors-prep.validate.$detector.request.json | \
 	curl -sk "$url" -u $user:$passwd \
 	-X POST -H "Content-Type: application/json" -d@-
 {
@@ -53,7 +53,7 @@ function validate_detector {
   "window_delay": {
     "period": {
       "interval": $window_delay,
-      "unit": "Seconds"
+      "unit": "Minutes"
     }
   }
 }

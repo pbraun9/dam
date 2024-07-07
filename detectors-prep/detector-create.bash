@@ -19,10 +19,9 @@ source $config_file
 [[ -z $window_delay ]] && echo could not define window_delay && exit 1
 
 function create-detector {
-	cat <<EOF | tee /tmp/dam.$detector.request.json | \
-	curl -sk "$endpoint/_plugins/_anomaly_detection/detectors" \
-	-u $user:$passwd \
-	-X POST -H "Content-Type: application/json" -d@-
+	cat <<EOF | tee /tmp/dam.detectors-prep.create.request.json | \
+		curl -sk --fail -X POST -H "Content-Type: application/json" "$endpoint/_plugins/_anomaly_detection/detectors?pretty" \
+		-u $user:$passwd -d@-
 {
   "name": "$detector",
   "description": "$descr",
@@ -52,7 +51,7 @@ function create-detector {
   "window_delay": {
     "period": {
       "interval": $window_delay,
-      "unit": "Seconds"
+      "unit": "Minutes"
     }
   },
   "result_index" : "opensearch-ad-plugin-result-$suffix"
@@ -65,8 +64,6 @@ echo CREATE DETECTOR FROM CONFIG $config_file
 echo results will be stored in index opensearch-ad-plugin-result-$suffix
 echo
 
-echo create $detector
-create-detector "$endpoint/_plugins/_anomaly_detection/detectors?pretty"
-echo
+create-detector
 echo
 

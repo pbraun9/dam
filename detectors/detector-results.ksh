@@ -3,11 +3,9 @@ set -e
 
 dummy=0
 
-debug=0
-
-# according to cron job + 1 minute as a window delay
-# instead of throttling
-delay_minutes=6
+# according to cron job + 1 minute as the wrapper proceeds with detectors one after another
+# no throttling required
+delay_minutes=11
 
 # override to 1H for testing
 #delay_minutes=60
@@ -29,20 +27,84 @@ detector=$1
 id=$2
 custom_index=$3
 
-[[ -z $detector ]] && echo need to define detector && exit 1
-[[ -z $id ]] && echo need to define id && exit 1
-[[ -z $custom_index ]] && echo need to define custom_index && exit 1
+[[ ! -r /data/dam/lib/send_webhook_sev.ksh ]] && echo cannot read /data/dam/lib/send_webhook_sev.ksh && exit 1
+source /data/dam/lib/send_webhook_sev.ksh
 
 # load credentials and endpoint
 source /etc/dam/dam.conf
 
-function search_results {
-	cat <<EOF | tee /tmp/dam.$detector.request.json | curl -sk \
-		"$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" \
-		-u $user:$passwd \
-		-X POST -H "Content-Type: application/json" -d@-
+# load url sev grade_trigger
+[[ ! -r /etc/dam/detectors/$detector.conf ]] && echo error: cannot read /etc/dam/detectors/$detector.conf && exit 1
+source /etc/dam/detectors/$detector.conf
+
+[[ -z $url ]]		&& echo error: url not defined in /etc/dam/detectors/$detector.conf && exit 1
+[[ -z $sev ]]		&& echo error: sev not defined in /etc/dam/detectors/$detector.conf && exit 1
+[[ -z $grade_trigger ]]	&& echo error: grade_trigger not defined in /etc/dam/detectors/$detector.conf && exit 1
+
+function parse_anomaly {
+	[[ -z $i ]] && echo function $0 requires \$i && exit 1
+
+	# hit 1 becomes hits[0]
+	(( i-- ))
+
+	# we already have id
+	#detector_id=`echo $results | jq -r '.hits.hits[]._source.detector_id'`
+
+	typeset -F 2 anomaly_grade
+	typeset -F 2 expected
+	typeset -F 2 feature
+
+	anomaly_grade=`echo $results | jq -r ".hits.hits[$i]._source.anomaly_grade"`
+	expected=`echo $results | jq -r ".hits.hits[$i]._source.expected_values[].value_list[].data" 2>/dev/null` || true
+	feature=`echo $results | jq -r ".hits.hits[$i]._source.feature_data[].data"`
+
+	[[ -z $anomaly_grade ]]	&& echo error: could not parse anomaly_grade && exit 1
+	[[ -z $expected ]]	&& echo error: could not parse expected value && exit 1
+	[[ -z $feature ]]	&& echo error: could not parse feature value && exit 1
+
+	if (( expected == 0.00 )); then
+		echo warn: could not parse expected value
+		typeset -u expected=none
+	fi
+
+	start_time=`echo $results | jq -r ".hits.hits[$i]._source.data_start_time" | sed -r 's/[[:digit:]]{3}$//'`
+	end_time=`echo $results | jq -r ".hits.hits[$i]._source.data_end_time" | sed -r 's/[[:digit:]]{3}$//'`
+
+	[[ -z $start_time ]]	&& echo error: could not parse start_time && exit 1
+	[[ -z $end_time ]]	&& echo error: could not parse end_time && exit 1
+
+	start_human_time=`date --rfc-email -d@$start_time`
+	end_human_time=`date --rfc-email -d@$end_time`
+
+	zulu_start=`date --utc --iso-8601=seconds -d@$start_time | sed -r 's/[+-]+[[:digit:]]{2}:[[:digit:]]{2}$//'`
+	zulu_end=`date --utc --iso-8601=seconds -d@$end_time | sed -r 's/[+-]+[[:digit:]]{2}:[[:digit:]]{2}$//'`
+
+	details=`/data/dam/detectors/detector-get.bash $id`
+
+	descr=`echo $details | jq -r '.anomaly_detector.description'`
+	index=`echo $details | jq -r '.anomaly_detector.indices[]'`
+	aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
+	field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
+
+	text="$detector ($descr) with grade $anomaly_grade
+
+$index $aggs $field (expected $expected / feature $feature)
+\`\`\`
+data start  $start_human_time
+data end    $end_human_time
+\`\`\`
+$url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))"
+
+	send_webhook_sev
+}
+
+# deal with max 10 anomalies found in given time-frame
+results=`cat <<EOF | tee /tmp/dam.detectors.$detector.request.json | \
+	curl -sk --fail -X POST -H "Content-Type: application/json" \
+		"$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" -u $user:$passwd -d@- | \
+	tee /tmp/dam.detectors.$detector.result.json
 {
-  "size": 1,
+  "size": 10,
   "query": {
     "bool": {
       "filter": [
@@ -54,7 +116,7 @@ function search_results {
         {
           "range": {
             "anomaly_grade": {
-              "gt": 0
+              "gte": $grade_trigger
             }
           }
         },
@@ -70,84 +132,21 @@ function search_results {
     }
   }
 }
-EOF
-}
+EOF`
 
-function prep_alert {
-	cat <<EOF
-$feature_name ($descr on $index)
-anomaly detected (grade $anomaly_grade) at $human_time
-expected value was $expected but feature value was $feature
-(aggs $aggs field $field)
-EOF
-}
-
-echo -n "$detector - "
-results=`search_results`
-
-echo "$results" > /tmp/dam.$detector.result.json
+(( $? > 0 )) && echo $detector - error: request exited abormally && exit 1
 
 hits=`echo $results | jq -r '.hits.total.value'`
 
-(( debug > 0 )) && echo hits - $hits
+[[ $hits = null ]] && echo $detector - error: could not parse hits total value && exit 1
 
-[[ $hits = null ]] && echo could not parse hits total value && exit 1
+# exit here if there are not hits
+(( hits == 0 )) && echo \ $detector - no hits && exit 0
 
-(( hits == 0 )) && echo no hits && exit 0
+# proceed with anomaly _source parsing
+(( hits > 0 )) && echo \ $detector - $hits hits
 
-typeset -F 2 anomaly_grade
-typeset -F 2 expected
-typeset -F 2 feature
-
-#detector_id=`echo $results | jq -r '.hits.hits[]._source.detector_id'`
-approx_anomaly_start_time=`echo $results | jq -r '.hits.hits[0]._source.approx_anomaly_start_time'`
-feature_name=`echo $results | jq -r '.hits.hits[0]._source.feature_data[].feature_name'`
-anomaly_grade=`echo $results | jq -r '.hits.hits[0]._source.anomaly_grade'`
-expected=`echo $results | jq -r '.hits.hits[0]._source.expected_values[].value_list[].data' 2>/dev/null` || true
-feature=`echo $results | jq -r '.hits.hits[0]._source.feature_data[].data'`
-
-approx_anomaly_start_time_no_millis=`echo $approx_anomaly_start_time | sed -r 's/[[:digit:]]{3}$//'`
-human_time=`date --rfc-email -d@$approx_anomaly_start_time_no_millis`
-
-[[ -z $approx_anomaly_start_time ]] && echo error: could not parse approx_anomaly_start_time && exit 1
-[[ -z $feature_name ]] && echo error: could not parse feature_name && exit 1
-[[ -z $anomaly_grade ]] && echo error: could not parse anomaly_grade && exit 1
-[[ -z $expected ]] && echo error: could not parse expected value && exit 1
-[[ -z $feature ]] && echo error: could not parse feature value && exit 1
-
-if (( expected == 0.00 )); then
-	echo warn: could not parse expected value
-	typeset -u expected=none
-fi
-
-if (( debug > 0 )); then
-	echo approx_anomaly_start_time - $approx_anomaly_start_time
-	echo feature_name - $feature_name
-	echo anomaly_grade - $anomaly_grade
-	echo expected - $expected
-	echo feature - $feature
-	echo approx_anomaly_start_time_no_millis - $approx_anomaly_start_time_no_millis
-	echo human_time - $human_time
-fi
-
-details=`/data/dam/contrib/detector-get.bash $detector $id`
-
-descr=`echo $details | jq -r '.anomaly_detector.description'`
-index=`echo $details | jq -r '.anomaly_detector.indices[]'`
-aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
-field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
-
-text="`prep_alert`"
-unset details descr index
-
-if (( dummy == 1 )); then
-        echo the following would be sent to $webhook
-        echo "$text"
-else
-        echo -n $alert - sending webhook to slack ...
-        curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $webhook; echo
-        exit 1
-fi
-
-(( debug > 0 )) && echo all done
+for i in `seq 1 $hits`; do
+	parse_anomaly
+done; unset i
 
