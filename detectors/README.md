@@ -13,8 +13,7 @@ you need some anomaly detectors in place
 place the conf files accoriding to detector names e.g. start with those samples
 
     cp -R ../conf/detectors/ /etc/dam/
-    cd /etc/dam/detectors/
-    ls -lhF
+    ls -lF /etc/dam/detectors/
 
 make sure the aggs time-frame corresponds to the cron-job further below (+ 1 minute)
 

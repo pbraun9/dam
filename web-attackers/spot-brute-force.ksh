@@ -44,7 +44,10 @@ source /data/dam/lib/send_webhook_sev.ksh
 [[ -z $vhost_field ]]	&& echo define vhost_field in $conf && exit 1
 [[ -z $bad_percent ]]   && echo define bad_percent in $conf && exit 1
 [[ -z $score_trigger ]]	&& echo define score_trigger in $conf && exit 1
-[[ -z $sev ]]		&& echo define sev in $conf && exit 1
+
+# indirection / deference to define sev according to current time-frame
+typeset -n sev="sev_$delay"
+[[ -z $sev ]]		&& echo define sev_$delay in $conf && exit 1
 
 [[ ! -x `whence jq` ]]	&& echo install jq first && exit 1
 [[ ! -x `whence host` ]] && echo install host command first && exit 1
@@ -371,12 +374,18 @@ for vhost in $vhosts; do
 	unset item total nok
 done; unset vhost
 
-# no need to proceed further for the reference time-frame
-[[ $delay = 1w ]] && echo && exit 0
-
 #
 # per client
 #
+
+# no need to proceed further for the 1w time-frame
+[[ $delay = 1w ]] && echo && exit 0
+
+# do not proceed with ip aggs for small time-frames, that's too noisy
+if [[ $frame = m ]]; then
+	minutes=`echo $delay | sed 's/m$//'`
+	(( minutes < 60 )) && echo && exit 0
+fi
 
 # jq: error (at <stdin>:34): Cannot iterate over null (null)
 # HOTFIX - sometimes the field we are targetting (as defined with remote_addr_field variable)
@@ -388,12 +397,6 @@ if [[ $field_type = string ]]; then
 	fix=$remote_addr_field.keyword
 else
 	fix=$remote_addr_field
-fi
-
-# do not proceed with ip aggs for small time-frames, that's too noisy
-if [[ $frame = m ]]; then
-	minutes=`echo $delay | sed 's/m$//'`
-	(( minutes < 60 )) && echo && exit 0
 fi
 
 # we want all unique field values - terms/ip is appropriate

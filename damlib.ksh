@@ -1,22 +1,15 @@
 
-function bomb {
-	echo
-	echo "error: $@"
-	echo
-	exit 1
-}
-
 function check_var {
 	tmp=`eval echo \\${$1}`
-	[[ -z $tmp ]] && bomb define $1
+	[[ -z $tmp ]] && echo error: define $1 && exit 1
 	unset tmp
 }
 
 # defines hits globally
 hits_per_second() {
-	[[ -z $delay ]] && bomb $0 misses delay
-	[[ -z $frame ]] && bomb $0 misses frame
-	[[ -z $total ]] && bomb $0 misses total
+	[[ -z $delay ]] && echo error: $0 misses delay && exit 1
+	[[ -z $frame ]] && echo error: $0 misses frame && exit 1
+	[[ -z $total ]] && echo error: $0 misses total && exit 1
 
 	(( debug > 1 )) && echo debug: delay is $delay
 	(( debug > 1 )) && echo debug: frame is $frame
@@ -32,20 +25,20 @@ hits_per_second() {
 		(( hits = total / ( int * 60 ) ))
 	elif [[ $frame = h ]]; then
 		(( hits = total / ( int * 60 * 60 ) ))
-	elif [[ $frame = h ]]; then
+	elif [[ $frame = d ]]; then
 		(( hits = total / ( int * 24 * 60 * 60 ) ))
 	elif [[ $frame = w ]]; then
 		(( hits = total / ( int * 7 * 24 * 60 * 60 ) ))
 	elif [[ $frame = M ]]; then
 		(( hits = total / ( int * 52 * 7 * 24 * 60 * 60 ) ))
 	else
-		bomb $0 - unknown frame - $frame
+		echo error: $0 - unknown frame - $frame && exit 1
 	fi
 
 	unset int
 
 	(( debug > 1 )) && echo debug: hits is $hits
 
-	[[ -z $hits ]] && bomb $0 failed to define hits
+	[[ -z $hits ]] && echo error: $0 failed to define hits && exit 1
 }
 
