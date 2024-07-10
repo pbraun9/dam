@@ -1,34 +1,37 @@
 {
-    "size": 0,
-    "query": {
-        "bool": {
-            "filter": [
-                {
-                    "query_string": {
-                        "query": "status:*"
-                    }
-                },
-                {
-                    "range": {
-                        "@timestamp": {
-                            "from": "now-5m/m",
-                            "to": "now"
-                        }
-                    }
-                }
-            ]
-        }
-    },
-    "aggs": {
-        "multi_terms_vhost_page": {
-            "multi_terms": {
-                "size": 3,
-                "terms": [
-                    { "field": "vhost.keyword" },
-                    { "field": "page.keyword" }
-                ]
+  "size": 0,
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "query_string": {
+            "query": "status:*"
+          }
+        },
+        {
+          "range": {
+            "@timestamp": {
+              "from": "now-5m/m",
+              "to": "now"
             }
+          }
         }
+      ]
     }
+  },
+  "aggs": {
+    "multi_terms_vhost_page": {
+      "multi_terms": {
+        "size": 3,
+        "terms": [
+          {
+            "field": "vhost.keyword"
+          },
+          {
+            "field": "page.keyword"
+          }
+        ]
+      }
+    }
+  }
 }
-

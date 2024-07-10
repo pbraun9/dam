@@ -4,11 +4,6 @@
     "bool": {
       "filter": [
         {
-          "query_string": {
-            "query": "request_time:*"
-          }
-        },
-        {
           "range": {
             "@timestamp": {
               "from": "now-5m/m",
@@ -20,9 +15,9 @@
     }
   },
   "aggs": {
-    "percentiles_request_time": {
-      "percentiles": {
-        "field": "request_time"
+    "aggs0": {
+      "value_count": {
+        "field": "EdgeResponseStatus"
       }
     }
   }

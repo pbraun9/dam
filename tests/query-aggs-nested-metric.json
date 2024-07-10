@@ -1,23 +1,23 @@
 {
   "size": 0,
   "query": {
-      "bool": {
-          "filter": [
-              {
-                  "query_string": {
-                      "query": "status:*"
-                  }
-              },
-              {
-                  "range": {
-                      "@timestamp": {
-                          "from": "now-5m/m",
-                          "to": "now"
-                      }
-                  }
-              }
-          ]
-      }
+    "bool": {
+      "filter": [
+        {
+          "query_string": {
+            "query": "status:*"
+          }
+        },
+        {
+          "range": {
+            "@timestamp": {
+              "from": "now-5m/m",
+              "to": "now"
+            }
+          }
+        }
+      ]
+    }
   },
   "aggs": {
     "terms_vhost_page": {

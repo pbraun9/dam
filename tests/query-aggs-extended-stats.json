@@ -1,29 +1,29 @@
 {
-    "size": 0,
-    "query": {
-        "bool": {
-            "filter": [
-                {
-                    "query_string": {
-                        "query": "request_time:*"
-                    }
-                },
-                {
-                    "range": {
-                        "@timestamp": {
-                            "from": "now-5m/m",
-                            "to": "now"
-                        }
-                    }
-                }
-            ]
-        }
-    },
-    "aggs": {
-        "extended_stats_request_time": {
-            "extended_stats": {
-                "field": "request_time"
+  "size": 0,
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "query_string": {
+            "query": "request_time:*"
+          }
+        },
+        {
+          "range": {
+            "@timestamp": {
+              "from": "now-5m/m",
+              "to": "now"
             }
+          }
         }
+      ]
     }
+  },
+  "aggs": {
+    "extended_stats_request_time": {
+      "extended_stats": {
+        "field": "request_time"
+      }
+    }
+  }
 }

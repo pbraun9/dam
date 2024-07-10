@@ -5,13 +5,13 @@
       "filter": [
         {
           "query_string": {
-            "query": "request_time:*"
+            "query": "EdgeResponseStatus:* AND !EdgeResponseStatus:[101 TO 304]"
           }
         },
         {
           "range": {
             "@timestamp": {
-              "from": "now-5m/m",
+              "from": "now-1d/d",
               "to": "now"
             }
           }
@@ -20,9 +20,15 @@
     }
   },
   "aggs": {
-    "percentiles_request_time": {
-      "percentiles": {
-        "field": "request_time"
+    "aggs0": {
+      "terms": {
+        "field": "EdgeResponseStatus",
+        "size": 10,
+        "order": [
+          {
+            "_count": "desc"
+          }
+        ]
       }
     }
   }

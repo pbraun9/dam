@@ -40,7 +40,5 @@ crontab -e
 ## resources
 
 https://opensearch.org/docs/latest/observing-your-data/ad/api/
-
-https://opensearch.org/docs/2.11/observing-your-data/ad/index/
-==> about detection_interval and window_delay
+==> search detector result
 

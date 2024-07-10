@@ -73,3 +73,11 @@ you can review the detectors' setup using those scripts in the detectors/ folder
     ./list-detectors.bash
     ./detector-get.bash DETECTOR-ID
 
+## resources
+
+https://opensearch.org/docs/latest/observing-your-data/ad/api/
+==> create anomaly detector
+
+https://opensearch.org/docs/2.11/observing-your-data/ad/index/
+==> about detection_interval and window_delay
+
