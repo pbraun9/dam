@@ -37,6 +37,19 @@ you do not have to use them all: you can choose which component you want to use.
 
 [spot web attackers](web-attackers/README.md)
 
+## log rotation
+
+```
+vi /etc/logrotate.d/dam
+
+/var/log/dam-*.log {
+        daily
+        missingok
+        rotate 3
+        notifempty
+}
+```
+
 ## resources
 
 https://api.slack.com/messaging/webhooks
