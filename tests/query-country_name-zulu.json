@@ -5,7 +5,7 @@
       "filter": [
         {
           "query_string": {
-            "query": "source.geo.country_name:\"SOME-COUNTRY\""
+            "query": "source_country_name:\"SOME-COUNTRY\""
           }
         },
         {

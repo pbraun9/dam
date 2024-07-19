@@ -4,7 +4,7 @@
 
 - an elk cluster (elasticsearch or opensearch)
 - some logs to be pushed over there
-- specific fields to be available for alert verbosity e.g. `sensor`, `source.geo.name` and `destination.geo.name`
+- specific fields to be available for alert verbosity e.g. `sensor`, `source_name` and `destination_name`
 
 ## goals
 
