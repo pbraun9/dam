@@ -3,5 +3,5 @@ set -e
 
 source /etc/dam/dam.conf
 
-curl -sk "$endpoint/_cat/shards?pretty" -u $admin_user:$admin_passwd
+curl -fsSk "$endpoint/_cat/shards" -u $admin_user:$admin_passwd
 

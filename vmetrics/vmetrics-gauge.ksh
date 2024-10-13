@@ -21,6 +21,8 @@ source $conf
 
 day=`date +%Y-%m-%d`
 
+echo \ $confshort triggers at $max_value%
+
 curl -s "$vmetrics_endpoint" -d "query=$query" | \
 	tee /tmp/dam.$confshort.json | \
 	jq -r '.data.result[] | .metric.sensor + "," + .value[1]' | \
@@ -34,10 +36,10 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		[[ -f $lock ]] && echo \ $confshort $sensor - there is a lock already for today \($lock\) && continue
 
 		if (( value >= max_value )); then
-			text="$confshort $sensor - ALARM value $value reached $max_value"
-			echo \ $text
+			text="$confshort $sensor $value% NOK"
+			echo " $text"
 		else
-			echo \ $confshort $sensor - OK value $value lower than $max_value
+			echo " $confshort $sensor $value% OK"
 			continue
 		fi
 

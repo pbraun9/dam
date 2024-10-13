@@ -7,22 +7,22 @@ echo `date --rfc-email` - $0
 # check that data-streams are alive
 echo \ elk alive index alerts
 for conf in `ls /etc/dam/alert-alive/*.conf 2>/dev/null`; do
-	/data/dam/alerts/alert-alive.bash $conf
+	/data/dam/alerts/alert-alive.ksh $conf
 done; unset conf
 
 echo \ elk count query alerts
 for conf in `ls /etc/dam/alert-aggs/*.conf 2>/dev/null`; do
-	/data/dam/alerts/alert-count.bash $conf
+	/data/dam/alerts/alert-count.ksh $conf
 done; unset conf
 
 echo \ elk search query alerts
 for conf in `ls /etc/dam/alert-hits/*.conf 2>/dev/null`; do
-        /data/dam/alerts/alert-hit.bash $conf
+        /data/dam/alerts/alert-hit.ksh $conf
 done; unset conf
 
 echo \ elk search and count query alerts
 for conf in `ls /etc/dam/alert-query-aggs/*.conf 2>/dev/null`; do
-	/data/dam/alerts/alert-query-count.bash $conf
+	/data/dam/alerts/alert-query-count.ksh $conf
 done; unset conf
 
 echo

@@ -37,6 +37,16 @@ you do not have to use them all: you can choose which component you want to use.
 
 [spot web attackers](web-attackers/README.md)
 
+## usage
+
+some kind of a SIEM interface...
+
+    tail -F /var/log/dam-alerts.log
+    tail -F /var/log/dam-detectors.log
+    tail -F /var/log/dam-services*.log
+    tail -F /var/log/dam-vmetrics.log
+    tail -F /var/log/dam-web-attackers-*log
+
 ## log rotation
 
 ```

@@ -57,6 +57,7 @@ function parse_anomaly {
 	anomaly_grade=`echo $results | jq -r ".hits.hits[$i]._source.anomaly_grade"`
 	expected=`echo $results | jq -r ".hits.hits[$i]._source.expected_values[].value_list[].data" 2>/dev/null` || true
 	feature=`echo $results | jq -r ".hits.hits[$i]._source.feature_data[].data"`
+        category=`echo $results | jq -r ".hits.hits[$i]._source.entity[].value"` || true
 
 	[[ -z $anomaly_grade ]]	&& echo error: could not parse anomaly_grade && exit 1
 	[[ -z $expected ]]	&& echo error: could not parse expected value && exit 1
@@ -88,7 +89,7 @@ function parse_anomaly {
 
 	text="$detector ($descr) with grade $anomaly_grade
 
-$index $aggs $field (expected $expected / feature $feature)
+$index $aggs $field (expected $expected / feature $feature) $category
 \`\`\`
 data start  $start_human_time
 data end    $end_human_time

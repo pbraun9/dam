@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ksh
 
 function prep_alert {
         # beware of escapes for "`"
@@ -28,8 +28,8 @@ EOF
 
 [[ ! -x `which jq` ]] && echo error: install jq first && exit 1
 
-[[ ! -r /data/dam/lib/send_webhook_sev.bash ]] && echo error: cannot read /data/dam/lib/send_webhook_sev.bash && exit 1
-source /data/dam/lib/send_webhook_sev.bash
+[[ ! -r /data/dam/lib/send_webhook_sev.ksh ]] && echo error: cannot read /data/dam/lib/send_webhook_sev.ksh && exit 1
+source /data/dam/lib/send_webhook_sev.ksh
 
 [[ -z $1 ]] && echo usage: ${0##*/} alert.conf && exit 1
 alert_conf=$1
@@ -89,6 +89,9 @@ EOF`
 
 # only get the most encountered field content (order desc): [0] instead of []
 doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
+
+# TODO merge with alert-alive?
+[[ $doc_count = null ]] && echo \ $alert - doc_count is null - NOK && exit 0
 
 (( doc_count < count_trigger )) && echo \ $alert - doc_count less than $count_trigger - all good && exit 0
 

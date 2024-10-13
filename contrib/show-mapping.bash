@@ -14,7 +14,7 @@ echo
 echo show index mappings
 echo
 
-(( debug > 0 )) && echo curl -sk "$endpoint/$index/_mapping?pretty" -u $user:$passwd && echo
+(( debug > 0 )) && echo curl -fsSk "$endpoint/$index/_mapping?pretty" -u $user:$passwd && echo
 
 dest=/tmp/dam.show-mapping.full.json
 echo -n writing to $dest ...

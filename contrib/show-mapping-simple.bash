@@ -6,11 +6,5 @@ index=$1
 
 source /etc/dam/dam.conf
 
-echo
-echo MAPPINGS
-echo
-
-curl -sk "$endpoint/$index/_mappings?pretty" -u $user:$passwd
-
-echo
+curl -fsSk "$endpoint/$index/_mappings?pretty" -u $user:$passwd
 

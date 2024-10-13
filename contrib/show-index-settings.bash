@@ -6,9 +6,5 @@ index=$1
 
 source /etc/dam/dam.conf
 
-echo
-echo SETTINGS
-echo
-
-curl -sk "$endpoint/$index/_settings?pretty" -u $user:$passwd
+curl -fsSk "$endpoint/$index/_settings?pretty" -u $user:$passwd
 

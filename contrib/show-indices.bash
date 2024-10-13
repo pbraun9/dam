@@ -3,5 +3,5 @@ set -e
 
 source /etc/dam/dam.conf
 
-curl -sk "$endpoint/_cat/indices/?v&pretty" -u $user:$passwd | sort -V -k3
+curl -fsSk "$endpoint/_cat/indices?s=index" -u $user:$passwd
 

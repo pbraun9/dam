@@ -25,7 +25,7 @@ frame=`echo $delay | sed -r 's/^[[:digit:]]+//'`
 [[ ! -r /data/dam/damlib.ksh ]] && echo cannot read /data/dam/damlib.ksh && exit 1
 [[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
 [[ ! -r $conf ]] && echo cannot read $conf && exit 1
-[[ ! -r /data/dam/lib/send_webhook_sev.bash ]] && echo cannot read /data/dam/lib/send_webhook_sev.bash && exit 1
+[[ ! -r /data/dam/lib/send_webhook_sev.ksh ]] && echo cannot read /data/dam/lib/send_webhook_sev.ksh && exit 1
 
 source /etc/dam/dam.conf
 source /data/dam/damlib.ksh
@@ -226,13 +226,14 @@ function attack_score {
 
 	if (( percent >= bad_percent )); then
 
-	## no need to calculate hits per second as this is not necessarilly a single attacker
-	# attempt to use hits per seconds for vhosts also -- log rejections for now
 		if [[ $item_type = overall ]]; then
+			# no need to calculate hits per second overall
+			# as this is not necessarilly a single attacker
 
 			send_alarm "$text"
 
 		else
+			# hits per seconds for vhosts
 
 			hits_per_second
 
@@ -300,6 +301,7 @@ function send_alarm {
 
 LC_NUMERIC=C
 
+echo
 echo `date --rfc-email` - $index - $delay
 
 #
@@ -377,6 +379,9 @@ done; unset vhost
 #
 # per client
 #
+
+# TOO NOISY - DISABLE FOR ALL TIME-FRAMES
+exit 0
 
 # no need to proceed further for the 1w time-frame
 [[ $delay = 1w ]] && echo && exit 0
@@ -456,6 +461,4 @@ for ip in $ips; do
 
 	unset item total nok
 done; unset ip
-
-echo
 
