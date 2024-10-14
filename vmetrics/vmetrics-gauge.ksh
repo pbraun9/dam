@@ -25,12 +25,19 @@ echo \ $confshort triggers at $max_value
 
 curl -s "$vmetrics_endpoint" -d "query=$query" | \
 	tee /tmp/dam.$confshort.json | \
-	jq -r '.data.result[] | .metric.sensor + "," + .value[1]' | \
+	jq -r '.data.result[] | .value[1] + "," + .metric.sensor + "," + .metric.instance + "," + .metric.resource_id + "," + .metric.host' | \
 	while read line; do
 		typeset -F 2 value
 
-		sensor=`echo $line | cut -f1 -d,`
-		value=`echo $line | cut -f2 -d,`
+		value=`echo $line | cut -f1 -d,`
+		sensor=`echo $line | cut -f2 -d,`
+
+		(( i = 3 ))
+		while [[ -z $sensor ]]; do
+			sensor=`echo $line | cut -f$i -d,`
+			(( i++ ))
+		done
+		unset i
 
 		lock=/var/lock/$confshort.$day.$sensor.lock
 		[[ -f $lock ]] && echo \ $confshort $sensor - there is a lock already for today \($lock\) && continue
