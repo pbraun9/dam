@@ -30,12 +30,14 @@ _assuming ssh client config is in place_
 	cp -i wrapper-svc.conf.sample wrapper-svc.conf
 	vi wrapper-svc.conf
 
-## acceptance
+## ready to go & acceptance
 
-	cd /data/dam/
-	./check-svc.bash host service-name
+check the wrapper works fine
 
-## enable
+    ls -lF /var/lock/*.lock | grep `date +%Y-%m-%d`
+	/data/dam/check-svc.bash HOST SERVICE-NAME
+
+and enable
 
 ```
 crontab -e

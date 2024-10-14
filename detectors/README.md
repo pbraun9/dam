@@ -12,7 +12,7 @@ you need some anomaly detectors in place
 
 place the conf files accoriding to detector names e.g. start with those samples
 
-    cp -R ../conf/detectors/ /etc/dam/
+    cp -R ../conf_samples/detectors/ /etc/dam/
     ls -lF /etc/dam/detectors/
 
 make sure the aggs time-frame corresponds to the cron-job further below (+ 1 minute)
@@ -22,11 +22,12 @@ make sure the aggs time-frame corresponds to the cron-job further below (+ 1 min
 
 	delay_minutes=11
 
-## ready to go
+## ready to go & acceptance
 
-check that the wrapper works alright
+check that the wrapper works fine
 
-	./wrapper.bash
+    ls -lF /var/lock/*.lock | grep `date +%Y-%m-%d`
+	/data/dam/detectors/wrapper.bash
 
 and enable
 

@@ -9,9 +9,16 @@ eventually install `sysstat` and then [parse its output](https://pub.nethence.co
 
     ls -lF /etc/fluent-bit/flb_metrics.conf
 
-    cp -R conf/vmetrics/ /etc/dam/
+    cp -R conf_samples/vmetrics/ /etc/dam/
 
-## enable
+## ready to go & acceptance
+
+check the wrapper works fine
+
+    ls -lF /var/lock/*.lock | grep `date +%Y-%m-%d`
+    /data/dam/vmetrics/wrapper.bash
+
+and enable
 
 ```
 crontab -e

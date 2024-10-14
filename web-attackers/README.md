@@ -30,22 +30,19 @@ and different timeframes according to the cron job and delay configuration setti
 ## setup
 
 we want to differenciate valid/OK http status codes from the rest
+-- eventually adjust `bad_percent` and `score_trigger`, namely what to expect in terms of failed http requests
 
-    cd conf.d/
-    cp -pi nginx-prod.conf.sample nginx-prod.conf
-    vi nginx-prod.conf
+    cp -R conf_samples/web-attackers/ /etc/dam/
+    vi /etc/dam/*.conf
 
-define the thresholds
+## ready to go & acceptance
 
-    /data/dam/spot/wrapper-spot-brute-force-prep.bash
+check the wrapper works fine
 
-now you know what to expect in terms of failed http requests
+    ls -lF /var/lock/*.lock | grep `date +%Y-%m-%d`
+    /data/dam/web-attackers/wrapper.bash 1h
 
-    vi nginx-prod.conf
-
-    ref_percent=...
-
-## enable
+and enable
 
 ```
 # Track relative amount of non-2xx http status codes

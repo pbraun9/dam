@@ -10,36 +10,26 @@
 
 elk alive index alerts
 
-    cp -Ri conf/alert-alive/ /etc/dam/
+    cp -R conf_samples/alert-alive/ /etc/dam/
 
 elk count query alerts
 
-    cp -Ri conf/alert-aggs/ /etc/dam/
+    cp -R conf_samples/alert-aggs/ /etc/dam/
 
 elk search query alerts
 
-	cp -Ri conf/alert-hits/ /etc/dam/
+	cp -R conf_samples/alert-hits/ /etc/dam/
 
 elk search and count query alerts
 
-    cp -Ri conf/alert-query-aggs/ /etc/dam/
+    cp -R conf_samples/alert-query-aggs/ /etc/dam/
 
-## acceptance
-
-	ls -lF /var/lock/*.lock
-
-	cd alerts/
-
-	./alert-alive.bash /etc/dam/alert-alive/suricata.conf
-	./alert-count.bash /etc/dam/alert-aggs/suricata-count-sigs.conf
-	./alert-hit.bash /etc/dam/alert-hits/brutes-internal.conf
-    ./alert-query-count.bash /etc/dam/alert-query-aggs/ingress-dev-access-auth.conf
-
-## ready to go
+## ready to go & acceptance
 
 check the wrapper works accordingly
 
-    ./wrapper.bash
+	ls -lF /var/lock/*.lock | grep `date +%Y-%m-%d`
+    /data/dam/alerts/wrapper.bash
 
 and enable
 

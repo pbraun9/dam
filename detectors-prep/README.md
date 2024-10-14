@@ -19,8 +19,7 @@ and grab the sample config
 
 deploy sample configs
 
-    cd /data/dam/
-    cp -R conf/detectors-prep/ /etc/dam/
+    cp -R conf_samples/detectors-prep/ /etc/dam/
 
 ## simple detector creation (single feature / no filter / no category)
 
@@ -67,7 +66,7 @@ now go to the opensearch dashboard and enable those
 
 ## troubleshooting
 
-you can review the detectors' setup using those scripts in the detectors/ folder
+you can review the detectors' setup using those scripts
 
     cd /data/dam/detectors/
     ./list-detectors.bash
