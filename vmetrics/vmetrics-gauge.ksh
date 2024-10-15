@@ -59,7 +59,7 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 			text="$confshort $sensor $value $value_hint NOK"
 			echo " $text"
 		else
-			echo " $confshort $sensor $value $value_hint OK"
+			(( debug > 0 )) && echo " $confshort $sensor $value $value_hint OK" || echo -n .
 			continue
 		fi
 
