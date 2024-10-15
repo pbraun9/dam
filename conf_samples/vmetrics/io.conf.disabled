@@ -1,11 +1,9 @@
 
 query=log_metric_gauge_io_used_percent
 
+value_hint="%"
+
 max_value=78.6
 
 url="https://grafana..."
-
-dummy=0
-
-sev=debug
 
