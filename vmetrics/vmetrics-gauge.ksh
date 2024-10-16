@@ -24,7 +24,7 @@ source $conf
 
 day=`date +%Y-%m-%d`
 
-echo \ $confshort triggers at $max_value $value_hint
+echo -n " $confshort triggers at $max_value $value_hint "
 
 # handle various labels
 # - sensor comes from flb
@@ -50,13 +50,13 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		unset i
 
 		lock=/var/lock/$confshort.$day.$sensor.lock
-		[[ -f $lock ]] && echo \ $confshort $sensor - there is a lock already for today \($lock\) && continue
+		[[ -f $lock ]] && echo -n \($lock\) && continue
 
 		# after lock filename definition
 		[[ -n $cluster ]] && sensor="$cluster/$sensor"
 
 		if (( value >= max_value )); then
-			text="$confshort $sensor $value $value_hint NOK"
+			text="$confshort $sensor $value $value_hint [NOK]($url)"
 			echo " $text"
 		else
 			(( debug > 0 )) && echo " $confshort $sensor $value $value_hint OK" || echo -n .
@@ -65,11 +65,17 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 
 		(( debug > 0 )) && continue
 
-		text="$text - $url
-(throttle for today $day)"
+		text="$text (throttle for today $day)"
 
 		echo -n sending vmetrics_webhook ...
-		curl -sX POST -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" $vmetrics_webhook; echo
+		cat <<EOF | curl -sX POST -H 'Content-type: application/json' -d@- $vmetrics_webhook; echo
+{
+  "text": "$text",
+  "channel": "$vmetrics_webhook_channel",
+  "username": "$vmetrics_webhook_username",
+  "icon_url": "$vmetrics_webhook_icon_url"
+}
+EOF
 		touch $lock
 
 		unset sensor value lock text

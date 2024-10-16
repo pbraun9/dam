@@ -15,9 +15,10 @@ you do not have to use them all: you can choose which component you want to use.
 	mkdir -p /data/
 	cd /data/
 	git clone https://github.com/pbraun9/dam.git
+    cd dam/
 
     mkdir -p /etc/dam/
-	cp dam/conf/dam.conf /etc/dam/
+	cp conf_samples/dam.conf /etc/dam/
 	vi /etc/dam/dam.conf
 
 	...
