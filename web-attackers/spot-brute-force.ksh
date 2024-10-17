@@ -301,9 +301,6 @@ function send_alarm {
 
 LC_NUMERIC=C
 
-echo
-echo `date --rfc-email` - $index - $delay
-
 #
 # overall
 #
