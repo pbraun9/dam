@@ -40,12 +40,17 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 
 		value=`echo $line | cut -f1 -d,`
 		cluster=`echo $line | cut -f2 -d,`
-		sensor=`echo $line | cut -f3 -d,`
+		resource_id=`echo $line | cut -f5 -d,`
 
+		# special case for opensearch metrics, they also add 'sensor' which conflicts with ours
+		[[ ! $resource_id = opensearch ]] && sensor=`echo $line | cut -f3 -d,`
+
+		# we already checked field 3 (.sensor) selectively
 		(( i = 4 ))
 		while [[ -z $sensor ]]; do
 			sensor=`echo $line | cut -f$i -d,`
 			(( i++ ))
+			(( i > 10 )) && echo error: cycled through more than 10 keys && exit 1
 		done
 		unset i
 
@@ -56,7 +61,7 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		[[ -n $cluster ]] && sensor="$cluster/$sensor"
 
 		if (( value >= max_value )); then
-			text="$confshort $sensor $value $value_hint [NOK]($url)"
+			text="$confshort $sensor $value $value_hint NOK"
 			echo " $text"
 		else
 			(( debug > 0 )) && echo " $confshort $sensor $value $value_hint OK" || echo -n .
@@ -70,14 +75,20 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		echo -n sending vmetrics_webhook ...
 		cat <<EOF | curl -sX POST -H 'Content-type: application/json' -d@- $vmetrics_webhook; echo
 {
-  "text": "$text",
+  "text": "$url",
   "channel": "$vmetrics_webhook_channel",
-  "username": "$vmetrics_webhook_username",
+  "username": "$vmetrics_webhook_username $confshort $sensor $value $value_hint NOK",
+  "icon_url": "$vmetrics_webhook_icon_url"
+}
+EOF
+		cat <<EOF | curl -sX POST -H 'Content-type: application/json' -d@- $webhook_debug; echo
+{
+  "text": "$confshort $sensor $value $value_hint NOK - $url"
   "icon_url": "$vmetrics_webhook_icon_url"
 }
 EOF
 		touch $lock
 
-		unset sensor value lock text
+		unset value cluster resource_id sensor lock text
 	done
 
