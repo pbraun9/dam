@@ -1,5 +1,8 @@
 #!/bin/ksh
 
+# warning: ${count_field%\.keyword}:$key is approximate Lucene syntax since we would rather have to sanitize $key e.g.
+# - use double-quotes for strings (no need for IP)
+# - slashes need to be escaped
 function prep_alert {
         # beware of escapes for "`"
         cat <<EOF
@@ -11,8 +14,8 @@ aggs $count_field (desc)
 .aggregations.sig.buckets.0.doc_count > $count_trigger
 \`\`\`
 
-found $doc_count doc_count within last $delay_minutes minutes
-$saved_dashboard_url --> ${count_field%\.keyword}
+found $doc_count doc_count within last $delay_minutes minute(s)
+$saved_dashboard_url ==> ${count_field%\.keyword}:$key
 $saved_search_url
 
 EOF
@@ -48,9 +51,10 @@ lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo \ $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | tee /tmp/dam.alerts.$alert.request.json | \
-	curl -sk --fail -X POST -H "Content-Type: application/json" "$endpoint/$index/_search?pretty" -u $user:$passwd -d @- | \
-	tee /tmp/dam.alerts.$alert.result.json
+# descending size 3 instead of 1 so we can see more resulting aggs in the output ($keys)
+# however only first match will be evaluated with [0]
+result=`cat <<EOF | tee /tmp/dam.alerts.$alert.request.json | curl -sk --fail -X POST \
+	-H "Content-Type: application/json" "$endpoint/$index/_search?pretty" -u $user:$passwd -d @-
 {
     "size": 0,
     "query": {
@@ -64,15 +68,15 @@ result=`cat <<EOF | tee /tmp/dam.alerts.$alert.request.json | \
                 {
                     "range": {
                         "@timestamp": {
-                            "from": "now-${delay_minutes}m/m",
-                            "to": "now/m"
+                            "from": "now-${delay_minutes}m",
+                            "to": "now"
                         }
                     }
                 }
             ]
         }
     },
-    "aggregations": {
+    "aggs": {
         "count": {
             "terms": {
                 "field": "$count_field",
@@ -94,18 +98,24 @@ EOF`
 
 # keep last trace for parsing manually and enhancing the requests
 # no log rotation required, override every time
-echo "$result" > /tmp/dam.$alert.result.json
+echo "$result" > /tmp/dam.alerts.$alert.result.json
 
 # only get the most encountered field content (order desc): [0] instead of []
 doc_count=`echo "$result" | jq -r ".aggregations.count.buckets[0].doc_count"`
 
-# TODO merge with alert-alive?
-[[ $doc_count = null ]] && echo \ $alert - doc_count is null - NOK && exit 0
+[[ $doc_count = null ]] && \
+	echo \ $alert - aggs doc_count is null - page is idling - all good && \
+	exit 0
 
-(( doc_count < count_trigger )) && echo \ $alert - doc_count less than $count_trigger - all good && exit 0
+(( doc_count < count_trigger )) && \
+	echo \ $alert - aggs doc_count is $doc_count less than $count_trigger - all good && \
+	exit 0
 
 # get all encountered field contents (according to aggs size)
 keys=`echo "$result" | jq -r ".aggregations.count.buckets[] | (.doc_count|tostring) + \"\t\" + .key"`
+
+# grab only the first match of descending size 3
+key=`echo "$keys" | head -1 | awk '{print $NF}'`
 
 text=`prep_alert`
 

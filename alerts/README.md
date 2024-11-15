@@ -38,6 +38,9 @@ crontab -e
 
 # Search query alerts
 */15 * * * * /data/dam/alerts/wrapper.bash >> /var/log/dam-alerts.log 2>&1
+
+# Hot pages
+   * * * * * /data/dam/alerts/wrapper-hot-pages.bash >> /var/log/dam-alerts-hot-pages.log 2>&1
 ```
 
 ## resources

@@ -3,6 +3,25 @@ set -e
 
 #(( debug = 1 ))
 
+function send_alarm {
+	echo -n sending vmetrics_webhook ...
+	cat <<EOF | curl -sX POST -H 'Content-type: application/json' -d@- $vmetrics_webhook; echo
+{
+  "text": "$sensor [$confshort]($url) $value $value_hint NOK",
+  "channel": "$vmetrics_webhook_channel",
+  "username": "$vmetrics_webhook_username",
+  "icon_url": "$vmetrics_webhook_icon_url"
+}
+EOF
+
+	echo -n sending webhook_debug ...
+	cat <<EOF | curl -sX POST -H 'Content-type: application/json' -d@- $webhook_debug || true; echo
+{
+  "text": "$vmetrics_webhook_username - $sensor [$confshort]($url) $value $value_hint NOK"
+}
+EOF
+}
+
 LC_NUMERIC=C
 
 [[ -z $1 ]] && echo -e \\n usage: ${0##*/} /etc/dam/vmetrics/RESOURCE.conf \\n && exit 1
@@ -34,7 +53,7 @@ echo -n " $confshort triggers at $max_value $value_hint "
 
 curl -s "$vmetrics_endpoint" -d "query=$query" | \
 	tee /tmp/dam.$confshort.json | \
-	jq -r '.data.result[] | .value[1] + "," + .metric.cluster + "," + .metric.sensor + "," + .metric.host + "," + .metric.resource_id + "," + .metric.instance' | \
+	jq -r '.data.result[] | .value[1] + "," + .metric.cluster + "," + .metric.sensor + "," + .metric.host + "," + .metric.resource_id + "," + .metric.instance + "," + .metric.index' | \
 	while read line; do
 		typeset -F 2 value
 
@@ -55,40 +74,23 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		unset i
 
 		lock=/var/lock/$confshort.$day.$sensor.lock
-		[[ -f $lock ]] && echo -n \($lock\) && continue
 
-		# after lock filename definition
-		[[ -n $cluster ]] && sensor="$cluster/$sensor"
-
-		if (( value >= max_value )); then
-			text="$confshort $sensor $value $value_hint NOK"
-			echo " $text"
+		if [[ -f $lock ]]; then
+			echo -n \($lock\)
 		else
-			(( debug > 0 )) && echo " $confshort $sensor $value $value_hint OK" || echo -n .
-			continue
+			# after lock filename definition
+			[[ -n $cluster ]] && sensor="$cluster/$sensor"
+
+			if (( value >= max_value )); then
+				echo " $sensor [$confshort]($url) $value $value_hint NOK"
+
+				(( ! debug > 0 )) && send_alarm
+				(( ! debug > 0 )) && touch $lock
+			else
+				(( debug > 0 )) && echo " $confshort $sensor $value $value_hint OK" || echo -n .
+			fi
 		fi
 
-		(( debug > 0 )) && continue
-
-		text="$text (throttle for today $day)"
-
-		echo -n sending vmetrics_webhook ...
-		cat <<EOF | curl -sX POST -H 'Content-type: application/json' -d@- $vmetrics_webhook; echo
-{
-  "text": "$url",
-  "channel": "$vmetrics_webhook_channel",
-  "username": "$vmetrics_webhook_username $confshort $sensor $value $value_hint NOK",
-  "icon_url": "$vmetrics_webhook_icon_url"
-}
-EOF
-		cat <<EOF | curl -sX POST -H 'Content-type: application/json' -d@- $webhook_debug; echo
-{
-  "text": "$confshort $sensor $value $value_hint NOK - $url"
-  "icon_url": "$vmetrics_webhook_icon_url"
-}
-EOF
-		touch $lock
-
-		unset value cluster resource_id sensor lock text
+		unset value cluster resource_id sensor lock
 	done
 
