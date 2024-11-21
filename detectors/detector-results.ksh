@@ -1,20 +1,10 @@
 #!/bin/ksh
 set -e
 
-dummy=0
+# show curl command
+#debug=1
 
-# according to cron job + 1 minute as the wrapper proceeds with detectors one after another
-# no throttling required
-delay_minutes=11
-
-# override to 1H for testing
-#delay_minutes=60
-
-# override to 10H for testing
-#delay_minutes=600
-
-# override to 100H for testing
-#delay_minutes=6000
+dummy=1
 
 #
 # query both default index and custom result index and send detailed alert
@@ -57,7 +47,9 @@ function parse_anomaly {
 	anomaly_grade=`echo $results | jq -r ".hits.hits[$i]._source.anomaly_grade"`
 	expected=`echo $results | jq -r ".hits.hits[$i]._source.expected_values[].value_list[].data" 2>/dev/null` || true
 	feature=`echo $results | jq -r ".hits.hits[$i]._source.feature_data[].data"`
-        category=`echo $results | jq -r ".hits.hits[$i]._source.entity[].value"` || true
+
+	# optional // jq: error (at <stdin>:1): Cannot iterate over null (null)
+        category=`echo $results | jq -r ".hits.hits[$i]._source.entity[].value" 2>/dev/null` || true
 
 	[[ -z $anomaly_grade ]]	&& echo error: could not parse anomaly_grade && exit 1
 	[[ -z $expected ]]	&& echo error: could not parse expected value && exit 1
@@ -80,30 +72,37 @@ function parse_anomaly {
 	zulu_start=`date --utc --iso-8601=seconds -d@$start_time | sed -r 's/[+-]+[[:digit:]]{2}:[[:digit:]]{2}$//'`
 	zulu_end=`date --utc --iso-8601=seconds -d@$end_time | sed -r 's/[+-]+[[:digit:]]{2}:[[:digit:]]{2}$//'`
 
-	details=`/data/dam/detectors/detector-get.bash $id`
+	details=`/data/dam/detectors/detector-get.bash $id | tee /tmp/dam.detector.$id.details.results.json`
 
 	descr=`echo $details | jq -r '.anomaly_detector.description'`
 	index=`echo $details | jq -r '.anomaly_detector.indices[]'`
 	aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
 	field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
 
-	text="$detector ($descr) with grade $anomaly_grade
+	[[ -n $category && -n $descr ]] && echo detector - error: both category and descr are defined && exit 1
+	[[ -n $category ]] && descr=${field%\.keyword}:$category
+
+	text="$detector $descr with grade $anomaly_grade
 
 $index $aggs $field (expected $expected / feature $feature) $category
 \`\`\`
 data start  $start_human_time
 data end    $end_human_time
 \`\`\`
-$url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))"
+$url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))&_a=(query:(language:lucene,query:'$descr'))"
 
+	# understands dummy
+	# understands lock
 	send_webhook_sev
 }
 
+day=`date +%Y-%m-%d`
+lock=/var/lock/$alert.$day.lock
+
+[[ -f $lock ]] && echo \ $detector - there is a lock already for today \($lock\) && exit 0
+
 # deal with max 10 anomalies found in given time-frame
-results=`cat <<EOF | tee /tmp/dam.detectors.$detector.request.json | \
-	curl -sk --fail -X POST -H "Content-Type: application/json" \
-		"$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" -u $user:$passwd -d@- | \
-	tee /tmp/dam.detectors.$detector.result.json
+cat <<EOF > /tmp/dam.detectors.$detector.request.json
 {
   "size": 10,
   "query": {
@@ -124,7 +123,7 @@ results=`cat <<EOF | tee /tmp/dam.detectors.$detector.request.json | \
         {
           "range": {
             "approx_anomaly_start_time": {
-              "from": "now-${delay_minutes}m/m",
+              "from": "now-1d/d",
               "to": "now"
             }
           }
@@ -133,9 +132,27 @@ results=`cat <<EOF | tee /tmp/dam.detectors.$detector.request.json | \
     }
   }
 }
-EOF`
+EOF
 
-(( $? > 0 )) && echo $detector - error: request exited abormally && exit 1
+if (( debug > 0 )); then
+
+	# warning escapes are in there \\
+	cat <<EOF
+	curl -fsSk -X POST -H "Content-Type: application/json" -u $user:$passwd \\
+		"$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" \\
+		-d@/tmp/dam.detectors.$detector.request.json
+EOF
+	exit 0
+else
+	results=`curl -fsSk -X POST -H "Content-Type: application/json" -u $user:$passwd \
+		"$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" \
+		-d@/tmp/dam.detectors.$detector.request.json | tee /tmp/dam.detectors.$detector.result.json`
+
+	# doesn't work when cmd within variable?
+	#(( $? > 0 )) && echo $detector - error: request exited abormally && exit 1
+fi
+
+[[ -z $results ]] && echo $detector - error: results are empty && exit 1
 
 hits=`echo $results | jq -r '.hits.total.value'`
 

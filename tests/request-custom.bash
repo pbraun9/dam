@@ -9,8 +9,8 @@ source /etc/dam/dam.conf
 
 [[ ! -r $file ]] && echo cannot read file $file && exit 1
 
-curl -fsSk -X POST -H "Content-Type: application/json" \
-        "$endpoint/$index/_search?pretty" -u $user:$passwd \
+curl -fsSk -X POST -H "Content-Type: application/json" -u $user:$passwd \
+        "$endpoint/$index/_search?pretty" \
 	-d @$file
 
 (( $? > 0 )) && echo error: curl request failed && exit 1

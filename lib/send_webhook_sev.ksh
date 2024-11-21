@@ -1,7 +1,7 @@
 
 function send_webhook_sev {
 	[[ -z $text ]] && echo \ error: function $0 requires \$text && exit 1
-	# lock is optional (not required for detectors)
+
 	# sev already checked, but not yet its deference (webhook url)
 
 	# indirection / deference
@@ -15,6 +15,7 @@ function send_webhook_sev {
 		echo -n \ info: $alert - sending webhook_$sev ...
 		curl -sX POST --fail -H 'Content-type: application/json' --data "{\"text\":\"$text\"}" "$wh_url" || echo FAIL; echo
 
+		# lock is optional (although we always use it incl. with detectors)
 		[[ -n $lock ]] && touch $lock
 	fi
 
