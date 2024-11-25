@@ -4,15 +4,14 @@ set -e
 # show curl command
 #debug=1
 
-dummy=1
+# do not send alerts
+#dummy=1
 
 #
 # query both default index and custom result index and send detailed alert
 #
-# no lock required here
-#
 
-[[ -z $3 ]] && echo -e \\n usage: ${0##*/} detector-name detector-id custom_index \\n && exit 1
+[[ -z $3 ]] && echo -e \\n usage: ${0##*/} detector-name detector-id custom-index \\n && exit 1
 detector=$1
 id=$2
 custom_index=$3
@@ -23,19 +22,8 @@ source /data/dam/lib/send_webhook_sev.ksh
 # load credentials and endpoint
 source /etc/dam/dam.conf
 
-# load url sev grade_trigger
-[[ ! -r /etc/dam/detectors/$detector.conf ]] && echo error: cannot read /etc/dam/detectors/$detector.conf && exit 1
-source /etc/dam/detectors/$detector.conf
-
-[[ -z $url ]]		&& echo error: url not defined in /etc/dam/detectors/$detector.conf && exit 1
-[[ -z $sev ]]		&& echo error: sev not defined in /etc/dam/detectors/$detector.conf && exit 1
-[[ -z $grade_trigger ]]	&& echo error: grade_trigger not defined in /etc/dam/detectors/$detector.conf && exit 1
-
 function parse_anomaly {
 	[[ -z $i ]] && echo function $0 requires \$i && exit 1
-
-	# hit 1 becomes hits[0]
-	(( i-- ))
 
 	# we already have id
 	#detector_id=`echo $results | jq -r '.hits.hits[]._source.detector_id'`
@@ -48,17 +36,19 @@ function parse_anomaly {
 	expected=`echo $results | jq -r ".hits.hits[$i]._source.expected_values[].value_list[].data" 2>/dev/null` || true
 	feature=`echo $results | jq -r ".hits.hits[$i]._source.feature_data[].data"`
 
-	# optional // jq: error (at <stdin>:1): Cannot iterate over null (null)
-        category=`echo $results | jq -r ".hits.hits[$i]._source.entity[].value" 2>/dev/null` || true
-
 	[[ -z $anomaly_grade ]]	&& echo error: could not parse anomaly_grade && exit 1
 	[[ -z $expected ]]	&& echo error: could not parse expected value && exit 1
 	[[ -z $feature ]]	&& echo error: could not parse feature value && exit 1
 
-	if (( expected == 0.00 )); then
-		echo warn: could not parse expected value
-		typeset -u expected=none
-	fi
+	#if (( expected == 0.00 )); then
+	#	echo warn: could not parse expected value
+	#	typeset -u expected=none
+	#fi
+
+	#(( expected == 0.00 && feature == 0.00 )) && echo DEBUG ALL GOOD && return
+
+	# optional // jq: error (at <stdin>:1): Cannot iterate over null (null)
+        category=`echo $results | jq -r ".hits.hits[$i]._source.entity[].value" 2>/dev/null` || true
 
 	start_time=`echo $results | jq -r ".hits.hits[$i]._source.data_start_time" | sed -r 's/[[:digit:]]{3}$//'`
 	end_time=`echo $results | jq -r ".hits.hits[$i]._source.data_end_time" | sed -r 's/[[:digit:]]{3}$//'`
@@ -74,32 +64,59 @@ function parse_anomaly {
 
 	details=`/data/dam/detectors/detector-get.bash $id | tee /tmp/dam.detector.$id.details.results.json`
 
-	descr=`echo $details | jq -r '.anomaly_detector.description'`
+	echo $details | jq -r '.anomaly_detector.description' > /tmp/dam.detectors.$detector.conf
+
+	# double-quotes are encoded as HTML hence we cannot simply use variables in there and source it from here
+	          url=`grep ^url /tmp/dam.detectors.$detector.conf | sed 's/^url //'`
+	grade_trigger=`grep ^grade_trigger /tmp/dam.detectors.$detector.conf | sed 's/^grade_trigger //'`
+	          sev=`grep ^sev /tmp/dam.detectors.$detector.conf | sed 's/^sev //'`
+	        query=`grep ^query /tmp/dam.detectors.$detector.conf | sed 's/^query //'` || true # optional
+	 enable_alert=`grep ^enable_alert /tmp/dam.detectors.$detector.conf | sed 's/^enable_alert //'`
+
+
+	[[ -z $url ]]		&& echo warn: url not defined in /etc/dam/detectors/$detector.conf && exit 0
+	[[ -z $grade_trigger ]]	&& echo warn: grade_trigger not defined in /etc/dam/detectors/$detector.conf && exit 0
+	[[ -z $sev ]]		&& echo warn: sev not defined in /etc/dam/detectors/$detector.conf && exit 0
+	# $query is optional
+	# enable_alert is optional
+
+	[[ $enable_alert = false ]] && echo \ warn: alert for detector $detector is disabled && exit 0
+
 	index=`echo $details | jq -r '.anomaly_detector.indices[]'`
 	aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
 	field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
 
-	[[ -n $category && -n $descr ]] && echo detector - error: both category and descr are defined && exit 1
-	[[ -n $category ]] && descr=${field%\.keyword}:$category
+	[[ -n $category && -n $query ]] && echo detector - error: both category and query are defined && exit 1
+	# add double-quotes around category name
+	[[ -n $category ]] && query="${field%\.keyword}:\"$category\""
 
-	text="$detector $descr with grade $anomaly_grade
-
-$index $aggs $field (expected $expected / feature $feature) $category
+	text="$detector with anomaly grade $anomaly_grade - ${field%\.keyword} $aggs (expected $expected / feature $feature)
 \`\`\`
 data start  $start_human_time
 data end    $end_human_time
 \`\`\`
-$url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))&_a=(query:(language:lucene,query:'$descr'))"
+[$index $query]($url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))&_a=(query:(language:lucene,query:'$query')))
+throttle for today ($day)"
 
-	# understands dummy
-	# understands lock
+
+	# understands dummy lock
+	# needs alert text sev
+	alert=$detector
 	send_webhook_sev
+
+	unset url grade_trigger sev query alert
 }
 
 day=`date +%Y-%m-%d`
-lock=/var/lock/$alert.$day.lock
+lock=/var/lock/$detector.$day.lock
 
 [[ -f $lock ]] && echo \ $detector - there is a lock already for today \($lock\) && exit 0
+
+# load url grade_trigger sev
+
+[[ ! -r /etc/dam/detectors/$detector.conf ]] && echo error: cannot read /etc/dam/detectors/$detector.conf && exit 1
+source /etc/dam/detectors/$detector.conf
+
 
 # deal with max 10 anomalies found in given time-frame
 cat <<EOF > /tmp/dam.detectors.$detector.request.json
@@ -162,9 +179,9 @@ hits=`echo $results | jq -r '.hits.total.value'`
 (( hits == 0 )) && echo \ $detector - no hits && exit 0
 
 # proceed with anomaly _source parsing
-(( hits > 0 )) && echo \ $detector - $hits hits
+echo \ $detector - $hits hit\(s\)
 
-for i in `seq 1 $hits`; do
+for i in `seq 0 $(( hits - 1 ))`; do
 	parse_anomaly
 done; unset i
 

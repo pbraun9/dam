@@ -1,6 +1,8 @@
 
 function send_webhook_sev {
-	[[ -z $text ]] && echo \ error: function $0 requires \$text && exit 1
+	[[ -z $alert ]] && echo \ error: function $0 requires alert && exit 1
+	[[ -z $text ]]  && echo \ error: function $0 requires text && exit 1
+	[[ -z $sev ]]   && echo \ error: function $0 requires sev && exit 1
 
 	# sev already checked, but not yet its deference (webhook url)
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-debug=1
+#debug=1
 
 echo `date --rfc-email` - $0
 
