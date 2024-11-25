@@ -1,0 +1,50 @@
+{
+  "name": "cloudflare-ZONETAG-status5xx",
+  "description": "query EdgeResponseStatus:[500 TO 599]\n# DASHBOARD-NAME\nurl https://opensearch.../app/dashboards?security_tenant=TENANT#/view/DASHBOARD-ID\ngrade_trigger 1.0\nsev s2",
+  "time_field": "@timestamp",
+  "indices": [
+    "cloudflare-ZONETAG"
+  ],
+  "filter_query" : {
+    "bool" : {
+      "filter" : [
+        {
+          "range" : {
+            "EdgeResponseStatus" : {
+              "from" : 500,
+              "to" : 599,
+              "include_lower" : true,
+              "include_upper" : true
+            }
+          }
+        }
+      ]
+    }
+  },
+  "feature_attributes": [
+    {
+      "feature_name": "count-status",
+      "feature_enabled": true,
+      "aggregation_query": {
+        "aggs0": {
+          "value_count": {
+            "field": "EdgeResponseStatus"
+          }
+        }
+      }
+    }
+  ],
+  "detection_interval": {
+    "period": {
+      "interval": 10,
+      "unit": "Minutes"
+    }
+  },
+  "window_delay": {
+    "period": {
+      "interval": 2,
+      "unit": "Minutes"
+    }
+  },
+  "result_index" : "opensearch-ad-plugin-result-anomalies"
+}

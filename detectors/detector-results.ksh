@@ -87,15 +87,15 @@ function parse_anomaly {
 	field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
 
 	[[ -n $category && -n $query ]] && echo detector - error: both category and query are defined && exit 1
-	# add double-quotes around category name
-	[[ -n $category ]] && query="${field%\.keyword}:\"$category\""
+	# double-escape double-quotes around category name so it fits into text=
+	[[ -n $category ]] && query="${field%\.keyword}:\\\"$category\\\""
 
-	text="$detector with anomaly grade $anomaly_grade - ${field%\.keyword} $aggs (expected $expected / feature $feature)
+	text="anomaly on $detector with anomaly grade $anomaly_grade - ${field%\.keyword} $aggs (expected $expected / feature $feature)
 \`\`\`
-data start  $start_human_time
-data end    $end_human_time
+start  $start_human_time
+end    $end_human_time
 \`\`\`
-[$index $query]($url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))&_a=(query:(language:lucene,query:'$query')))
+[$detector $query]($url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))&_a=(query:(language:lucene,query:'$query')))
 throttle for today ($day)"
 
 
@@ -108,7 +108,7 @@ throttle for today ($day)"
 }
 
 day=`date +%Y-%m-%d`
-lock=/var/lock/$detector.$day.lock
+lock=/var/lock/dam.detectors.$detector.$day.lock
 
 [[ -f $lock ]] && echo \ $detector - there is a lock already for today \($lock\) && exit 0
 

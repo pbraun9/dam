@@ -1,5 +1,6 @@
 {
   "name": "cloudflare-ZONETAG-status4xx",
+  "description": "query EdgeResponseStatus:[400 TO 499]\n# DASHBOARD-NAME\nurl https://opensearch.../app/dashboards?security_tenant=TENANT#/view/DASHBOARD-ID\ngrade_trigger 1.0\nsev s2",
   "time_field": "@timestamp",
   "indices": [
     "cloudflare-ZONETAG"
@@ -11,9 +12,9 @@
           "range" : {
             "EdgeResponseStatus" : {
               "from" : 400,
-              "to" : 500,
+              "to" : 499,
               "include_lower" : true,
-              "include_upper" : false
+              "include_upper" : true
             }
           }
         }
