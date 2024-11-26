@@ -62,30 +62,6 @@ function parse_anomaly {
 	zulu_start=`date --utc --iso-8601=seconds -d@$start_time | sed -r 's/[+-]+[[:digit:]]{2}:[[:digit:]]{2}$//'`
 	zulu_end=`date --utc --iso-8601=seconds -d@$end_time | sed -r 's/[+-]+[[:digit:]]{2}:[[:digit:]]{2}$//'`
 
-	details=`/data/dam/detectors/detector-get.bash $id | tee /tmp/dam.detector.$id.details.results.json`
-
-	echo $details | jq -r '.anomaly_detector.description' > /tmp/dam.detectors.$detector.conf
-
-	# double-quotes are encoded as HTML hence we cannot simply use variables in there and source it from here
-	          url=`grep ^url /tmp/dam.detectors.$detector.conf | sed 's/^url //'`
-	grade_trigger=`grep ^grade_trigger /tmp/dam.detectors.$detector.conf | sed 's/^grade_trigger //'`
-	          sev=`grep ^sev /tmp/dam.detectors.$detector.conf | sed 's/^sev //'`
-	        query=`grep ^query /tmp/dam.detectors.$detector.conf | sed 's/^query //'` || true # optional
-	 enable_alert=`grep ^enable_alert /tmp/dam.detectors.$detector.conf | sed 's/^enable_alert //'`
-
-
-	[[ -z $url ]]		&& echo warn: url not defined in /etc/dam/detectors/$detector.conf && exit 0
-	[[ -z $grade_trigger ]]	&& echo warn: grade_trigger not defined in /etc/dam/detectors/$detector.conf && exit 0
-	[[ -z $sev ]]		&& echo warn: sev not defined in /etc/dam/detectors/$detector.conf && exit 0
-	# $query is optional
-	# enable_alert is optional
-
-	[[ $enable_alert = false ]] && echo \ warn: alert for detector $detector is disabled && exit 0
-
-	index=`echo $details | jq -r '.anomaly_detector.indices[]'`
-	aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
-	field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
-
 	[[ -n $category && -n $query ]] && echo detector - error: both category and query are defined && exit 1
 	# double-escape double-quotes around category name so it fits into text=
 	[[ -n $category ]] && query="${field%\.keyword}:\\\"$category\\\""
@@ -98,13 +74,11 @@ end    $end_human_time
 [$detector $query]($url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))&_a=(query:(language:lucene,query:'$query')))
 throttle for today ($day)"
 
-
 	# understands dummy lock
 	# needs alert text sev
 	alert=$detector
 	send_webhook_sev
-
-	unset url grade_trigger sev query alert
+	unset alert
 }
 
 day=`date +%Y-%m-%d`
@@ -112,11 +86,32 @@ lock=/var/lock/dam.detectors.$detector.$day.lock
 
 [[ -f $lock ]] && echo \ $detector - there is a lock already for today \($lock\) && exit 0
 
-# load url grade_trigger sev
+details=`/data/dam/detectors/detector-get.bash $id | tee /tmp/dam.detector.$id.details.results.json`
 
-[[ ! -r /etc/dam/detectors/$detector.conf ]] && echo error: cannot read /etc/dam/detectors/$detector.conf && exit 1
-source /etc/dam/detectors/$detector.conf
+echo $details | jq -r '.anomaly_detector.description' > /tmp/dam.detectors.$detector.conf
 
+# double-quotes are encoded as HTML hence we cannot simply use variables in there and source it from here
+	  url=`grep ^url /tmp/dam.detectors.$detector.conf | sed 's/^url //'`
+grade_trigger=`grep ^grade_trigger /tmp/dam.detectors.$detector.conf | sed 's/^grade_trigger //'`
+	  sev=`grep ^sev /tmp/dam.detectors.$detector.conf | sed 's/^sev //'`
+	query=`grep ^query /tmp/dam.detectors.$detector.conf | sed 's/^query //'` || true       # optional
+ enable_alert=`grep ^enable_alert /tmp/dam.detectors.$detector.conf | sed 's/^enable_alert //'` # optional
+
+[[ -z $url ]]		&& echo warn: not managed by DAM - url not defined in $id detector descr && exit 0
+[[ -z $grade_trigger ]]	&& echo warn: not managed by DAM - grade_trigger not defined in $id detector descr && exit 0
+[[ -z $sev ]]		&& echo warn: not managed by DAM - sev not defined in $id detector descr && exit 0
+
+[[ $enable_alert = false ]] && echo \ warn: alert for detector $detector is disabled && exit 0
+
+index=`echo $details | jq -r '.anomaly_detector.indices[]'`
+aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
+
+[[ -z $index ]] && echo error: could not define index && exit 1
+[[ -z $aggs ]] && echo error: could not define aggs && exit 1
+
+field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
+
+[[ -z $field ]] && echo error: could not define field && exit 1
 
 # deal with max 10 anomalies found in given time-frame
 cat <<EOF > /tmp/dam.detectors.$detector.request.json

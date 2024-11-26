@@ -10,6 +10,19 @@ you need some anomaly detectors in place
 
 ## setup
 
+make sure the detector contains those in their respective description
+
+    # some comment e.g. DASHBOARD-NAME
+    url https://opensearch...
+    grade_trigger 1.0
+    sev s2
+
+and eventually
+
+    query EdgeResponseStatus:[500 TO 599]
+    #enable_alert: false
+
+<!--
 place the conf files accoriding to detector names e.g. start with those samples
 
     cp -R ../conf_samples/detectors/ /etc/dam/
@@ -28,6 +41,7 @@ check that the wrapper works fine
 
     ls -lF /var/lock/*.lock | grep `date +%Y-%m-%d`
 	/data/dam/detectors/wrapper.bash
+-->
 
 and enable
 

@@ -13,18 +13,17 @@ list existing detectors with their respective ID
 and grab the sample config
 
 	./detector-get.bash DETECTOR-NAME DETECTOR-ID > DETECTOR-NAME-template.conf
--->
 
 ## detectors setup
+-->
 
 deploy sample configs
 
     cp -R conf_samples/detectors-config/ /etc/dam/
 
-now proceed with either simple detector
---or-- advanced detector creation as follows.
+you can now proceed with either simple detector and/or advanced detector creation as follows.
 
-## simple detector creation
+### simple detector creation
 
 _single feature / no filter / no category_
 
@@ -46,7 +45,7 @@ create the validated detectors
 	    ./detector-create.bash $f
     done; unset f
 
-## advanced detector creation
+### advanced detector creation
 
 tune the json for the (advanced) detectors you want to create
 
@@ -65,9 +64,9 @@ now go to the opensearch dashboard and enable those
 
 	Anomaly Detection // Detectors
 
-	select all & actions enable
+	select all & actions ==> enable
 
-	also enable historical data for as long as possible
+	and eventually enable historical data for e.g. 2 weeks
 
 ## troubleshooting
 
