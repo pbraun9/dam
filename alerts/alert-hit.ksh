@@ -22,7 +22,7 @@ EOF
 	cat <<EOF
 \`\`\`
 
-$saved_search_url
+$saved_url
 EOF
 	[[ -n $details ]] && echo "$details"
 	cat <<EOF
