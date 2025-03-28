@@ -1,19 +1,25 @@
 #!/bin/bash
 
-#debug=1
-
 echo `date --rfc-email` - $0
 
-/data/dam/detectors/list-detectors.bash | grep -vE '^#|^$' | while read line; do
-	detector=`echo $line | cut -f1 -d,`
-	id=`echo $line | cut -f2 -d,`
-	custom_index=`echo $line | cut -f3 -d,`
+source /etc/dam/dam.conf
 
-	(( debug > 0 )) && echo /data/dam/detectors/detector-results.ksh $detector $id $custom_index && continue
-	/data/dam/detectors/detector-results.ksh $detector $id $custom_index
+for conf in /etc/dam/detectors/*.conf; do
 
-	unset detector id custom_index
-done
+	# avoid sourcing the whole alert conf in the wrapper
+	detector_id=`grep ^detector_id $conf | cut -f2 -d=`
 
-echo
+        state=`curl -fsSk "$endpoint/_plugins/_anomaly_detection/detectors/$detector_id/_profile" -u $user:$passwd | jq -r '.state'`
+
+	if [[ $state = RUNNING ]]; then
+		/data/dam/detectors/detector-results.ksh $conf
+	elif [[ $state = DISABLED ]]; then
+		echo warn: detector id $detector_id is $state
+	else
+		echo error: could not define detector id $detector_id state
+		exit 1
+	fi
+
+	unset detector_id state
+done; unset conf
 

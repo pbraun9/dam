@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # list all detectors with _plugins/_anomaly_detection/detectors
-# then select only active ones with _plugins/_anomaly_detection/detectors/<detectorId>/_profile
+# then also show whether it's RUNNING or DISABLED
+# with _plugins/_anomaly_detection/detectors/$detector_id/_profile
 
 # load credentials and endpoint
 source /etc/dam/dam.conf
@@ -42,7 +43,6 @@ echo "$list" | while read line; do
 	detector_id=`echo $line | cut -f2 -d,`
 
 	detector_state=`detector-profile | jq -r .state`
-	#echo DEBUG $detector_id has state $detector_state
-	[[ $detector_state = RUNNING ]] && echo $line
+	echo $line,$detector_state
 done
 

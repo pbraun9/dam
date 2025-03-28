@@ -3,45 +3,29 @@
 ## requirements
 
 you need some anomaly detectors in place
--- eventually create those [through the api](../detectors-prep/README.md)
+-- eventually create those [through the api](../detectors-config/README.md).
+once you are done, check they are up and running
 
     cd /data/dam/detectors/
 	./list-detectors.bash
 
 ## setup
 
-make sure the detector contains those in their respective description
+place the conf files in place (ideally accoriding to detector names for clarity)
 
-    # some comment e.g. DASHBOARD-NAME
-    url https://opensearch...
-    grade_trigger 1.0
-    sev s2
+    mkdir -p /etc/dam/detectors/
+    cp -R /data/dam/conf_samples/detectors/*conf /etc/dam/detectors/
+    vi /etc/dam/detectors/*conf
 
-and eventually
+and eventually e.g.
 
-    query EdgeResponseStatus:[500 TO 599]
-    #enable_alert: false
-
-<!--
-place the conf files accoriding to detector names e.g. start with those samples
-
-    cp -R ../conf_samples/detectors/ /etc/dam/
-    ls -lF /etc/dam/detectors/
-
-make sure the aggs time-frame corresponds to the cron-job further below (+ 1 minute)
-
-    cd /data/dam/detectors/
-	vi detector-results.bash
-
-	delay_minutes=11
+    query="EdgeResponseStatus:[500 TO 599]"
 
 ## ready to go & acceptance
 
 check that the wrapper works fine
 
-    ls -lF /var/lock/*.lock | grep `date +%Y-%m-%d`
 	/data/dam/detectors/wrapper.bash
--->
 
 and enable
 
@@ -49,7 +33,7 @@ and enable
 crontab -e
 
 # Anomaly detection
-*/10 * * * * /data/dam/detectors/wrapper.bash >> /var/log/dam-detectors.log 2>&1
+* * * * * /data/dam/detectors/wrapper.bash >> /var/log/dam-detectors.log 2>&1
 ```
 
 ## resources

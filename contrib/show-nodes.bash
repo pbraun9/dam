@@ -5,7 +5,8 @@ set -e
 
 source /etc/dam/dam.conf
 
-(( debug > 0 )) && echo "curl -fsSk \"$endpoint/_cat/nodes?v&s=load_1m\" -u $user:$passwd" && exit
+(( debug > 0 )) && echo "curl -fsSk \"$endpoint/_cat/nodes?v&s=name\" -u $user:$passwd" && exit
+# s=load_1m
 
 curl -fsSk "$endpoint/_cat/nodes?v&s=load_1m" -u $user:$passwd
 

@@ -26,12 +26,11 @@ alert_conf=${alert_conf_path##*/}
 alert=${alert_conf%\.conf}
 alert=${alert#*/}
 
-[[ ! -r $alert_conf_path ]] && echo cannot read $alert_conf_path && exit 1
-source $alert_conf_path
-
-# load overall settings after conf - eventually override dummy=1
 [[ ! -r /etc/dam/dam.conf ]] && echo cannot read /etc/dam/dam.conf && exit 1
+[[ ! -r $alert_conf_path ]] && echo cannot read $alert_conf_path && exit 1
+
 source /etc/dam/dam.conf
+source $alert_conf_path
 
 day=`date +%Y-%m-%d`
 lock=/var/lock/$alert.$day.lock

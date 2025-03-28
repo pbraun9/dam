@@ -1,20 +1,21 @@
 #!/bin/ksh
 set -e
 
-# show curl command
+custom_index=opensearch-ad-plugin-result-anomalies
+
+# show curl commands
 #debug=1
 
 # do not send alerts
 #dummy=1
 
 #
-# query both default index and custom result index and send detailed alert
+# get details on a given detector using its id
+# then query custom result index and send detailed alert
 #
 
-[[ -z $3 ]] && echo -e \\n usage: ${0##*/} detector-name detector-id custom-index \\n && exit 1
-detector=$1
-id=$2
-custom_index=$3
+[[ -z $1 ]] && echo detector alert conf? && exit 1
+conf=$1
 
 [[ ! -r /data/dam/lib/send_webhook_sev.ksh ]] && echo cannot read /data/dam/lib/send_webhook_sev.ksh && exit 1
 source /data/dam/lib/send_webhook_sev.ksh
@@ -24,9 +25,6 @@ source /etc/dam/dam.conf
 
 function parse_anomaly {
 	[[ -z $i ]] && echo function $0 requires \$i && exit 1
-
-	# we already have id
-	#detector_id=`echo $results | jq -r '.hits.hits[]._source.detector_id'`
 
 	typeset -F 2 anomaly_grade
 	typeset -F 2 expected
@@ -71,8 +69,7 @@ function parse_anomaly {
 start  $start_human_time
 end    $end_human_time
 \`\`\`
-[$detector $query]($url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))&_a=(query:(language:lucene,query:'$query')))
-throttle for today ($day)"
+[$detector $query]($url?_g=(time:(from:'$zulu_start.000Z',to:'$zulu_end.000Z'))&_a=(query:(language:lucene,query:'$query')))"
 
 	# understands dummy lock
 	# needs alert text sev
@@ -81,39 +78,38 @@ throttle for today ($day)"
 	unset alert
 }
 
-day=`date +%Y-%m-%d`
-lock=/var/lock/dam.detectors.$detector.$day.lock
+source $conf
 
-[[ -f $lock ]] && echo \ $detector - there is a lock already for today \($lock\) && exit 0
+[[ -z $detector_id ]]   && echo define detector_id in $conf && exit 1
+[[ -z $url ]]           && echo define url in $conf && exit 1
+[[ -z $grade_trigger ]] && echo define grade_trigger in $conf && exit 1
+[[ -z $sev ]]           && echo define sev in $conf
 
-details=`/data/dam/detectors/detector-get.bash $id | tee /tmp/dam.detector.$id.details.results.json`
+[[ -n $query ]]         && echo warn: query defined in $conf
 
-echo $details | jq -r '.anomaly_detector.description' > /tmp/dam.detectors.$detector.conf
+details=`curl -fsSk "$endpoint/_plugins/_anomaly_detection/detectors/$detector_id?pretty" -u $user:$passwd`
 
-# double-quotes are encoded as HTML hence we cannot simply use variables in there and source it from here
-	  url=`grep ^url /tmp/dam.detectors.$detector.conf | sed 's/^url //'`
-grade_trigger=`grep ^grade_trigger /tmp/dam.detectors.$detector.conf | sed 's/^grade_trigger //'`
-	  sev=`grep ^sev /tmp/dam.detectors.$detector.conf | sed 's/^sev //'`
-	query=`grep ^query /tmp/dam.detectors.$detector.conf | sed 's/^query //'` || true       # optional
- enable_alert=`grep ^enable_alert /tmp/dam.detectors.$detector.conf | sed 's/^enable_alert //'` # optional
+detector=`echo $details | jq -r '.anomaly_detector.name'`
+   index=`echo $details | jq -r '.anomaly_detector.indices[]'`
+    aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
 
-[[ -z $url ]]		&& echo warn: not managed by DAM - url not defined in $id detector descr && exit 0
-[[ -z $grade_trigger ]]	&& echo warn: not managed by DAM - grade_trigger not defined in $id detector descr && exit 0
-[[ -z $sev ]]		&& echo warn: not managed by DAM - sev not defined in $id detector descr && exit 0
-
-[[ $enable_alert = false ]] && echo \ warn: alert for detector $detector is disabled && exit 0
-
-index=`echo $details | jq -r '.anomaly_detector.indices[]'`
-aggs=`echo $details | jq -r '.anomaly_detector.feature_attributes[].aggregation_query.aggs0 | keys[]'`
-
+[[ -z $index ]] && echo error: could not define detector && exit 1
 [[ -z $index ]] && echo error: could not define index && exit 1
-[[ -z $aggs ]] && echo error: could not define aggs && exit 1
+[[ -z $aggs ]]  && echo error: could not define aggs && exit 1
 
 field=`echo $details | jq -r ".anomaly_detector.feature_attributes[].aggregation_query.aggs0.$aggs.field"`
 
 [[ -z $field ]] && echo error: could not define field && exit 1
 
-# deal with max 10 anomalies found in given time-frame
+unset details
+
+# todo lock per anomaly - just make sure an alert was sent for every recorded anomaly
+# we can only define the lock after we found out about detector's name
+hour=`date +%Y-%m-%d-%Hh`
+lock=/var/lock/dam.detectors.$detector.$hour.lock
+[[ -f $lock ]] && echo \ $detector - there is an hourly lock already \($lock\) && exit 0
+
+# deal with max 10 anomalies found in a given time-frame
 cat <<EOF > /tmp/dam.detectors.$detector.request.json
 {
   "size": 10,
@@ -122,7 +118,7 @@ cat <<EOF > /tmp/dam.detectors.$detector.request.json
       "filter": [
         {
           "term": {
-            "detector_id": "$id"
+            "detector_id": "$detector_id"
           }
         },
         {
@@ -135,7 +131,7 @@ cat <<EOF > /tmp/dam.detectors.$detector.request.json
         {
           "range": {
             "approx_anomaly_start_time": {
-              "from": "now-1d/d",
+              "from": "now-1h/h",
               "to": "now"
             }
           }
@@ -147,18 +143,18 @@ cat <<EOF > /tmp/dam.detectors.$detector.request.json
 EOF
 
 if (( debug > 0 )); then
-
-	# warning escapes are in there \\
-	cat <<EOF
+	# warning carriage return escapes are in there
+	cat <<-EOF
+	DEBUG
 	curl -fsSk -X POST -H "Content-Type: application/json" -u $user:$passwd \\
-		"$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" \\
-		-d@/tmp/dam.detectors.$detector.request.json
+	 "$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" \\
+	 -d@/tmp/dam.detectors.$detector.request.json
 EOF
 	exit 0
 else
 	results=`curl -fsSk -X POST -H "Content-Type: application/json" -u $user:$passwd \
-		"$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" \
-		-d@/tmp/dam.detectors.$detector.request.json | tee /tmp/dam.detectors.$detector.result.json`
+	 "$endpoint/_plugins/_anomaly_detection/detectors/results/_search/$custom_index?pretty" \
+	 -d@/tmp/dam.detectors.$detector.request.json | tee /tmp/dam.detectors.$detector.result.json`
 
 	# doesn't work when cmd within variable?
 	#(( $? > 0 )) && echo $detector - error: request exited abormally && exit 1
@@ -170,7 +166,7 @@ hits=`echo $results | jq -r '.hits.total.value'`
 
 [[ $hits = null ]] && echo $detector - error: could not parse hits total value && exit 1
 
-# exit here if there are not hits
+# exit here if there are no hits
 (( hits == 0 )) && echo \ $detector - no hits && exit 0
 
 # proceed with anomaly _source parsing

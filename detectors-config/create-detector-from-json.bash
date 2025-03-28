@@ -15,15 +15,6 @@ json_file=$1
 
 [[ ! -r $json_file ]] && echo cannot read $json_file && exit 1
 
-function send_request {
-	[[ -z $1 ]] && echo function $0 needs api && exit 1
-	api=$1
-
-	curl -sk -X POST -H "Content-Type: application/json" "$api" -u $user:$passwd -d@$json_file
-}
-
-echo
-
 detector=`jq -r '.name' < $json_file`
 result_index=`jq -r '.result_index' < $json_file`
 
@@ -35,20 +26,23 @@ result_index=`jq -r '.result_index' < $json_file`
 #	echo -e warn: detector name and result_index suffix are not the same \\n
 
 echo $detector detector basic config check
-send_request "$endpoint/_plugins/_anomaly_detection/detectors/_validate?pretty"
+curl -sk -X POST -H "Content-Type: application/json" "$endpoint/_plugins/_anomaly_detection/detectors/_validate" \
+	-u $user:$passwd -d@$json_file
 echo
 
 echo $detector detector model training check
-send_request "$endpoint/_plugins/_anomaly_detection/detectors/_validate/model?pretty"
+curl -sk -X POST -H "Content-Type: application/json" "$endpoint/_plugins/_anomaly_detection/detectors/_validate/model" \
+	-u $user:$passwd -d@$json_file
 echo
 
 echo anomalies will be stored in $result_index
 echo
 
-echo all good?  ready to go? \(press enter or Ctrl-C\)
+echo ready?
 read -r
 
 echo creating detector $detector
-send_request "$endpoint/_plugins/_anomaly_detection/detectors?pretty"
+curl -sk -X POST -H "Content-Type: application/json" "$endpoint/_plugins/_anomaly_detection/detectors" \
+        -u $user:$passwd -d@$json_file
 echo
 

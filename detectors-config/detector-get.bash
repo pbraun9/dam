@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# show detector configuration
+# helps rebuild detectors from json
+
 [[ -z $1 ]] && echo detector id? && exit 1
 id=$1
 
