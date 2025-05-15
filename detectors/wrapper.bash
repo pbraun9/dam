@@ -23,3 +23,5 @@ for conf in /etc/dam/detectors/*.conf; do
 	unset detector_id state
 done; unset conf
 
+echo
+

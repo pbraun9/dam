@@ -17,9 +17,13 @@ place the conf files in place (ideally accoriding to detector names for clarity)
     cp -R /data/dam/conf_samples/detectors/*conf /etc/dam/detectors/
     vi /etc/dam/detectors/*conf
 
-and eventually e.g.
+and eventually some helper for building up the link
 
     query="EdgeResponseStatus:[500 TO 599]"
+
+note there's also some code to handle this one
+
+    cathegory=...
 
 ## ready to go & acceptance
 

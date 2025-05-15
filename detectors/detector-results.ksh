@@ -3,11 +3,11 @@ set -e
 
 custom_index=opensearch-ad-plugin-result-anomalies
 
-# show curl commands
-#debug=1
+# enable to show curl commands
+debug=0
 
-# do not send alerts
-#dummy=1
+# enable to avoid sending alerts
+dummy=0
 
 #
 # get details on a given detector using its id
@@ -60,9 +60,13 @@ function parse_anomaly {
 	zulu_start=`date --utc --iso-8601=seconds -d@$start_time | sed -r 's/[+-]+[[:digit:]]{2}:[[:digit:]]{2}$//'`
 	zulu_end=`date --utc --iso-8601=seconds -d@$end_time | sed -r 's/[+-]+[[:digit:]]{2}:[[:digit:]]{2}$//'`
 
-	[[ -n $category && -n $query ]] && echo detector - error: both category and query are defined && exit 1
-	# double-escape double-quotes around category name so it fits into text=
-	[[ -n $category ]] && query="${field%\.keyword}:\\\"$category\\\""
+	if [[ -n $category && -n $query ]]; then
+		# todo eventually merge both with an AND
+		echo warn: both category-from-results and query-from-conf are defined - using query
+	elif [[ -n $category ]]; then
+		# double-escape double-quotes around category name so it fits into text=
+		query="${field%\.keyword}:\\\"$category\\\""
+	fi
 
 	text="anomaly on $detector with anomaly grade $anomaly_grade - ${field%\.keyword} $aggs (expected $expected / feature $feature)
 \`\`\`
@@ -84,8 +88,7 @@ source $conf
 [[ -z $url ]]           && echo define url in $conf && exit 1
 [[ -z $grade_trigger ]] && echo define grade_trigger in $conf && exit 1
 [[ -z $sev ]]           && echo define sev in $conf
-
-[[ -n $query ]]         && echo warn: query defined in $conf
+# query is optional
 
 details=`curl -fsSk "$endpoint/_plugins/_anomaly_detection/detectors/$detector_id?pretty" -u $user:$passwd`
 
