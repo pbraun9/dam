@@ -16,8 +16,8 @@ for conf in /etc/dam/detectors/*.conf; do
 	elif [[ $state = DISABLED ]]; then
 		echo warn: detector id $detector_id is $state
 	else
-		echo error: could not define detector id $detector_id state
-		exit 1
+		echo error: detector id $detector_id state is $state
+		#continue
 	fi
 
 	unset detector_id state

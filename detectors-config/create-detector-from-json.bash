@@ -42,7 +42,7 @@ echo ready?
 read -r
 
 echo creating detector $detector
-curl -sk -X POST -H "Content-Type: application/json" "$endpoint/_plugins/_anomaly_detection/detectors" \
+curl -sk -X POST -H "Content-Type: application/json" "$endpoint/_plugins/_anomaly_detection/detectors?pretty" \
         -u $user:$passwd -d@$json_file
 echo
 

@@ -19,9 +19,12 @@ source $config_file
 [[ -z $window_delay ]] && echo could not define window_delay && exit 1
 
 function create-detector {
+	echo debug: /tmp/dam.detectors-prep.create.request.json
+	echo calling _plugins/_anomaly_detection/detectors ...
 	cat <<EOF | tee /tmp/dam.detectors-prep.create.request.json | \
-		curl -sk --fail -X POST -H "Content-Type: application/json" "$endpoint/_plugins/_anomaly_detection/detectors?pretty" \
-		-u $user:$passwd -d@-
+		curl -sk --fail -X POST -H "Content-Type: application/json" \
+			"$endpoint/_plugins/_anomaly_detection/detectors?pretty" \
+			-u $user:$passwd -d@- && echo done
 {
   "name": "$detector",
   "description": "$descr",

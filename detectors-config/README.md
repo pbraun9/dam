@@ -12,7 +12,7 @@ list existing detectors with their respective ID
 
 and grab the sample config
 
-	./detector-get.bash DETECTOR-NAME DETECTOR-ID > DETECTOR-NAME-template.conf
+	./get-detector.bash DETECTOR-NAME DETECTOR-ID > DETECTOR-NAME-template.conf
 
 ## detectors setup
 -->
@@ -23,6 +23,7 @@ deploy sample configs
 
 you can now proceed with either simple detector and/or advanced detector creation as follows.
 
+<!--
 ### simple detector creation
 
 _single feature / no filter / no category_
@@ -45,7 +46,9 @@ create the validated detectors
 	    ./detector-create.bash $f
     done; unset f
 
-### advanced detector creation
+-->
+
+### detector creation
 
 tune the json for the (advanced) detectors you want to create
 
@@ -72,9 +75,8 @@ now go to the opensearch dashboard and enable those
 
 you can review the detectors' setup using those scripts
 
-    cd /data/dam/detectors/
     ./list-detectors.bash
-    ./detector-get.bash DETECTOR-ID
+    ./get-detector.bash DETECTOR-ID
 
 ## resources
 

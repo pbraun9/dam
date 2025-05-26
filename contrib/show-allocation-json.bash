@@ -7,7 +7,6 @@ set -e
 source /etc/dam/dam.conf
 
 # w/o header line (no &v)
-# s=disk.avail
 curl -fsSk "$endpoint/_cat/allocation?s=shards" -u $user:$passwd | \
 while read -r line; do
         shards=`echo $line | awk '{print $1}'`
