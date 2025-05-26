@@ -12,7 +12,7 @@ list existing detectors with their respective ID
 
 and grab the sample config
 
-	./get-detector.bash DETECTOR-NAME DETECTOR-ID > DETECTOR-NAME-template.conf
+	./get-detector.bash DETECTOR_ID > DETECTOR_NAME-template.conf
 
 ## detectors setup
 -->
@@ -76,7 +76,7 @@ now go to the opensearch dashboard and enable those
 you can review the detectors' setup using those scripts
 
     ./list-detectors.bash
-    ./get-detector.bash DETECTOR-ID
+    ./get-detector.bash DETECTOR_ID
 
 ## resources
 
