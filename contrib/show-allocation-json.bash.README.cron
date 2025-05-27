@@ -1,0 +1,4 @@
+
+# custom osearch metrics - shards per node
+*/10 * * * * /data/dam/contrib/show-allocation-json.bash >> /var/log/dam.osearch.allocation.log 2>&1
+

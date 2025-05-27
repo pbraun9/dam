@@ -14,8 +14,12 @@ dummy=0
 # then query custom result index and send detailed alert
 #
 
-[[ -z $1 ]] && echo detector alert conf? && exit 1
+[[ -z $2 ]] && echo detector alert conf and id? && exit 1
 conf=$1
+detector_id=$2
+
+[[ ! -r $conf ]] && echo error: cannot read conf: $conf && exit 1
+[[ -z $detector_id ]] && echo error: missing detector_id as argument: $detector_id && exit 1
 
 [[ ! -r /data/dam/lib/send_webhook_sev.ksh ]] && echo cannot read /data/dam/lib/send_webhook_sev.ksh && exit 1
 source /data/dam/lib/send_webhook_sev.ksh
@@ -84,7 +88,6 @@ end    $end_human_time
 
 source $conf
 
-[[ -z $detector_id ]]   && echo define detector_id in $conf && exit 1
 [[ -z $url ]]           && echo define url in $conf && exit 1
 [[ -z $grade_trigger ]] && echo define grade_trigger in $conf && exit 1
 [[ -z $sev ]]           && echo define sev in $conf

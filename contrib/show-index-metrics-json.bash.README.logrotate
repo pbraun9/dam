@@ -1,0 +1,15 @@
+
+```
+vi /etc/logrotate.d/osearch_custom_metrics
+
+# no compress
+/var/log/dam.osearch*log {
+        daily
+        rotate 3
+        missingok
+        notifempty
+        nocompress
+        create
+}
+```
+

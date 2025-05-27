@@ -1,0 +1,4 @@
+
+# custom osearch metrics - indices
+* * * * * /data/dam/contrib/show-index-metrics-json.bash >> /var/log/dam.osearch.indices.log 2>&1
+
