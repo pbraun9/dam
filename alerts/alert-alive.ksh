@@ -3,7 +3,7 @@
 # assuming full path for alert_conf_path
 
 function prep_alert {
-        # beware of escapes for "`"
+        # beware escapes are in there
         cat <<EOF
 $alert - $title
 \`\`\`
@@ -37,33 +37,45 @@ lock=/var/lock/$alert.$day.lock
 
 [[ -f $lock ]] && echo \ $alert - there is a lock already for today \($lock\) && exit 0
 
-result=`cat <<EOF | tee /tmp/dam.alerts.$alert.request.json | \
-	curl -sk --fail -X POST -H "Content-Type: application/json" "$endpoint/$index/_search?pretty" -u $user:$passwd -d @- | \
-	tee /tmp/dam.alerts.$alert.result.json
+request=`cat <<EOF9
 {
-    "size": 1,
-    "query": {
-        "bool": {
-            "filter": [
-                {
-                    "range": {
-                        "@timestamp": {
-                            "from": "now-${delay_minutes}m/m",
-                            "to": "now/m"
-                        }
-                    }
-                }
-            ]
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "@timestamp": {
+              "from": "now-${delay_minutes}m/m",
+              "to": "now/m"
+            }
+          }
         }
+      ]
     }
+  }
 }
+EOF9`
+
+(( debug > 0 )) && echo -e "curl -fsSk -X POST -H \"Content-Type: application/json\" $endpoint/$index/_count?pretty -u $user:$passwd -d @-\n$request" || true
+
+result=`cat <<EOF | curl -fsSk -X POST -H "Content-Type: application/json" \
+	"$endpoint/$index/_count?pretty" -u $user:$passwd -d @-
+$request
 EOF`
 
 (( $? > 0 )) && echo " $alert - error: request exited abormally (see /tmp/dam.alerts.$alert.*.json)" && exit 1
 
 [[ -z $result ]] && echo \ $alert - error: result is empty && exit 1
 
-hits=`echo "$result" | jq -r ".hits.total.value"`
+(( debug > 0 )) && echo -e "\nresult is\n$result" || true
+
+# search api
+#hits=`echo "$result" | jq -r ".hits.total.value"`
+
+# count api
+hits=`echo "$result" | jq -r ".count"`
+
+(( debug > 0 )) && echo hits is $hits || true
 
 # search query above returns max 1 hit anyway
 (( hits > 0 )) && echo \ $alert - index/stream is alive \($hits hits\) - all good && exit 0

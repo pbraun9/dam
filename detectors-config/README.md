@@ -57,7 +57,7 @@ tune the json for the (advanced) detectors you want to create
 validate and create the detectors at once
 
     cd /data/dam/detectors-config/
-    for f in /etc/dam/detectors-config/*.conf; do
+    for f in /etc/dam/detectors-config/*.json; do
         ./create-detector-from-json.bash $f
     done; unset f
 
