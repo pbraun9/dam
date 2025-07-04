@@ -45,8 +45,8 @@ request=`cat <<EOF9
         {
           "range": {
             "@timestamp": {
-              "from": "now-${delay_minutes}m/m",
-              "to": "now/m"
+              "from": "now-${delay_minutes}m",
+              "to": "now"
             }
           }
         }
