@@ -66,7 +66,7 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 		unset i
 
 		# hotfix for blackbox-exporter - strip url crap
-		sensor=`echo $sensor | sed -r 's@^http?://([^/]+).*@\1@'`
+		sensor=`echo $sensor | sed -r 's@^https?://([^/]+).*@\1@'`
 
 		lock=/var/lock/$confshort.$day.$sensor.lock
 
