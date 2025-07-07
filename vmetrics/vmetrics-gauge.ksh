@@ -1,8 +1,6 @@
 #!/bin/ksh
 set -e
 
-#(( debug = 1 ))
-
 function send_alarm {
 	# || true - let the lock happen thereafter, whatever happens with the alarm
 	echo -n sending vmetrics_webhook ...
@@ -66,6 +64,9 @@ curl -s "$vmetrics_endpoint" -d "query=$query" | \
 			(( i > 10 )) && echo error: cycled through more than 10 keys && exit 1
 		done
 		unset i
+
+		# hotfix for blackbox-exporter - strip url crap
+		sensor=`echo $sensor | sed -r 's@^http?://([^/]+).*@\1@'`
 
 		lock=/var/lock/$confshort.$day.$sensor.lock
 
