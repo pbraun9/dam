@@ -39,3 +39,6 @@ for data_stream in $data_streams; do
 done; unset data_stream
 echo
 
+# index to datastream
+# echo $idx | sed -r 's/^.ds-//; s/-[[:digit:]]+$//'`
+
