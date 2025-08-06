@@ -8,7 +8,7 @@ data_streams=`curl -fsSk "$endpoint/_data_stream/?pretty" -u $admin_user:$admin_
 echo
 for data_stream in $data_streams; do
 	echo $data_stream
-	./show-indices-date.bash $data_stream
+	./show-indices-action.bash $data_stream
 	echo
 done; unset data_stream
 echo
