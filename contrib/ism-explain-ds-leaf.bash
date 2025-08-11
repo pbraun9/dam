@@ -18,6 +18,7 @@ output=`curl -fsSk "$endpoint/_plugins/_ism/explain/$index" -u $admin_user:$admi
         + .action.name + ","
         + (.action.failed|tostring)'`
 
+# we do not need a loop here (supposedly a single line of output) but it does the job
 echo "$output" | while read line; do
          index=`echo $line | cut -f1 -d,`
         policy=`echo $line | cut -f2 -d,`
