@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+# https://docs.opensearch.org/latest/im-plugin/data-streams/
+
 [[ -z $1 ]] && echo datastream? && exit 1
 ds=$1
 

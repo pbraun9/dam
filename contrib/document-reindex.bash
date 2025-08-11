@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# http://docs.opensearch.org/latest/api-reference/document-apis/reindex/
+
 [[ -z $2 ]] && echo data-stream start end && exit 1
 ds=$1
 start=$2

@@ -2,7 +2,8 @@
 
 prepare the list of failed index policies
 
-	time ./show-data-stream-index-action.bash > failed_policies
+    mv -i index_policies index_policies.`date +%s`
+    time ./wrapper-datastreams-ism-explain-action.bash > index_policies
 
 <!--
 just in case
@@ -12,12 +13,12 @@ just in case
 
 check which indices went wrong as for rollovers
 
-	grep failed:true failed_policies | grep rollover
-	grep failed:true failed_policies | grep read_only
-	grep failed:true failed_policies | grep -vE 'rollover|read_only'
+	grep failed:true index_policies | grep rollover
+	grep failed:true index_policies | grep read_only
+	grep failed:true index_policies | grep -vE 'rollover|read_only'
 
-	indices=`grep failed:true failed_policies | grep rollover | awk '{print $1}'`
-	indices=`grep failed:true failed_policies | grep read_only | awk '{print $1}'`
+	indices=`grep failed:true index_policies | grep rollover | awk '{print $1}'`
+	indices=`grep failed:true index_policies | grep read_only | awk '{print $1}'`
 
 	for index in $indices; do
 		echo $index

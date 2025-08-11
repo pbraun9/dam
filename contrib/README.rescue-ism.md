@@ -8,8 +8,8 @@ generate the list of datastreams
 
 for precise index patterns that match a specific datastream, proceed individually
 
-    ./add-policy.bash test-mgmt test-access
-    ./update-policy.bash test-mgmt test-access
+    ./ism-add-policy.bash test-mgmt test-access
+    ./ism-update-managed-policy.bash test-mgmt test-access
 
 for an index pattern that matches multiple datastreams, use the wrapper
 

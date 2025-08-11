@@ -17,7 +17,7 @@ pattern=$2
 
 #for index in `grep $pattern list-index-leafs | grep null | awk '{print $1}'`; do
 for index in `grep ^$pattern list-datastreams | awk '{print $1}'`; do
-	./add-policy.bash $policy $index
+	./ism-policy-add.bash $policy $index
 	sleep 1
 done; unset index
 

@@ -2,11 +2,11 @@
 set -e
 
 [[ -z $1 ]] && echo datastream? && exit 1
-data_stream=$1
+datastream=$1
 
 source /etc/dam/dam.conf
 
-dsindices=`curl -fsSk "$endpoint/_data_stream/$data_stream?pretty" -u $admin_user:$admin_passwd | \
+dsindices=`curl -fsSk "$endpoint/_data_stream/$datastream?pretty" -u $admin_user:$admin_passwd | \
                 jq -r '.data_streams[].indices[].index_name' | sort -V`
 
 for dsindex in $dsindices; do
